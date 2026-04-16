@@ -15,11 +15,42 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install and Build
+        run: |
+          npm install
+          npm run build:all
+
+      - name: Prepare Deployment Directory
+        run: |
+          mkdir -p deploy/react deploy/vue deploy/angular
+          
+          # Deploy landing page to the root
+          cp -r apps/landing-page/dist/* ./deploy/
+          
+          # Deploy sub-apps to their respective routes
+          cp -r apps/react-app/dist/* ./deploy/react/
+          cp -r apps/vue-app/dist/* ./deploy/vue/
+          
+          # Angular 17+ builds to a subfolder within dist
+          if [ -d "apps/angular-app/dist/angular-app/browser" ]; then
+            cp -r apps/angular-app/dist/angular-app/browser ./deploy/angular
+          fi
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ secrets.AWS_DEV_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Deploy public folder to S3
-        run: aws s3 sync ./public s3://${{ secrets.AWS_DEV_BUCKET_NAME }}/ --delete
+      - name: Deploy Build Artifacts to S3
+        run: aws s3 sync ./deploy s3://${{ secrets.AWS_DEV_BUCKET_NAME }}/ --delete
+
+      - name: Invalidate CloudFront Cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_DEV_CLOUDFRONT_ID }} --paths "/*"
