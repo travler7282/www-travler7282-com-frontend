@@ -23,7 +23,8 @@ jobs:
       - name: Install and Build
         run: |
           rm -f package-lock.json
-          npm install
+          npm install --include=optional
+          npm ls typescript --workspaces --depth=0
           npm run build:all
 
       - name: Prepare Deployment Directory
