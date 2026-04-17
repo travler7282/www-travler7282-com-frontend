@@ -1,8 +1,8 @@
-name: Deploy to Dev S3
+name: Deploy to Prod S3
 
 on:
   push:
-    branches: [ dev ]  # Triggers on merges/pushes to dev
+    branches: [ main ]  # Triggers on merges/pushes to main
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -49,12 +49,12 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: ${{ secrets.AWS_DEV_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_PROD_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy Build Artifacts to S3
-        run: aws s3 sync ./deploy s3://${{ secrets.AWS_DEV_BUCKET_NAME }}/ --delete
+        run: aws s3 sync ./deploy s3://${{ secrets.AWS_PROD_BUCKET_NAME }}/ --delete
 
       - name: Invalidate CloudFront Cache
         run: |
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_DEV_CLOUDFRONT_ID }} --paths "/*"
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_PROD_CLOUDFRONT_ID }} --paths "/*"
