@@ -4,7 +4,9 @@
       <p class="eyebrow">travler7282 / web sdr mockup</p>
       <h1>RF Control Console</h1>
     </div>
-    <div class="status-pill">LIVE IQ BUS</div>
+    <div class="status-pill" [ngClass]="{ offline: !backendConnected }">
+      {{ backendConnected ? 'BACKEND CONNECTED' : 'BACKEND OFFLINE' }}
+    </div>
   </header>
 
   <section class="layout-grid">
@@ -20,7 +22,7 @@
           [max]="maxFrequencyHz"
           [step]="1000"
           [value]="frequencyHz"
-          (input)="frequencyHz = +$any($event.target).value"
+          (input)="onFrequencyInput($event)"
           (change)="clampFrequency()"
         />
         <div class="step-row">
@@ -39,7 +41,7 @@
           min="1"
           max="220"
           [value]="bandwidthKhz"
-          (input)="bandwidthKhz = +$any($event.target).value"
+          (input)="onBandwidthInput($event)"
         />
         <span class="value-readout">{{ bandwidthKhz }} kHz</span>
       </div>
@@ -69,7 +71,7 @@
             min="0"
             max="50"
             [value]="gainDb"
-            (input)="gainDb = +$any($event.target).value"
+            (input)="onGainInput($event)"
           />
           <span class="value-readout">{{ gainDb }} dB</span>
         </div>
@@ -82,7 +84,7 @@
             min="0"
             max="50"
             [value]="squelchDb"
-            (input)="squelchDb = +$any($event.target).value"
+            (input)="onSquelchInput($event)"
           />
           <span class="value-readout">{{ squelchDb }} dB</span>
         </div>
@@ -143,7 +145,7 @@
           </button>
         </article>
       }
-      <p class="hint">Mockup only: no backend streaming yet.</p>
+      <p class="hint">API URL: {{ backendApiUrl }} | {{ backendMessage }}</p>
     </aside>
   </section>
 </main>

@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdr-express-app-dev
+  labels:
+    app: sdr-express-app-dev
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sdr-express-app-dev
+  template:
+    metadata:
+      labels:
+        app: sdr-express-app-dev
+    spec:
+      containers:
+        - name: sdr-express-app
+          image: docker.io/travler7282/sdr-express-app:0.1.0-dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "8080"
+            - name: CORS_ORIGIN
+              value: "*"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdr-express-app-dev
+spec:
+  selector:
+    app: sdr-express-app-dev
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sdr-express-app-dev
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - dev-api.travler7282.com
+      secretName: sdr-express-app-dev-tls
+  rules:
+    - host: dev-api.travler7282.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sdr-express-app-dev
+                port:
+                  number: 80
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sdr-express-app-dev-tls
+spec:
+  secretName: sdr-express-app-dev-tls
+  dnsNames:
+    - dev-api.travler7282.com
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-prod

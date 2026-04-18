@@ -50,6 +50,12 @@ app-root {
 		letter-spacing: 0.06em;
 		color: #58f8ca;
 		background: rgba(6, 30, 27, 0.45);
+
+		&.offline {
+			border-color: rgba(255, 133, 99, 0.55);
+			color: #ffb8a0;
+			background: rgba(43, 14, 10, 0.5);
+		}
 	}
 
 	.layout-grid {
@@ -301,6 +307,7 @@ app-root {
 		margin: 0.8rem 0 0;
 		font-size: 0.78rem;
 		color: #7da3c8;
+		line-height: 1.35;
 	}
 
 	@media (max-width: 1180px) {

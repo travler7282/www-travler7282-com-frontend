@@ -2,12 +2,15 @@
   "name": "www-travler7282-com-monorepo",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "backends/*"
   ],
   "scripts": {
     "install:all": "npm install",
     "build:all": "npm run build --workspaces --if-present",
-    "test:all": "npm run test --workspaces --if-present"
+    "test:all": "npm run test --workspaces --if-present",
+    "dev:sdr-backend": "npm run dev --workspace sdr-express-app",
+    "build:sdr-backend": "npm run build --workspace sdr-express-app"
   },
   "overrides": {
     "typescript": "~5.8.3"
