@@ -35,7 +35,8 @@ jobs:
       - name: Resolve backend image version
         id: backend_version
         run: |
-          echo "version=$(node -p \"require('./backends/sdr-express-app/package.json').version\")" >> "$GITHUB_OUTPUT"
+            version=$(node -p "require('./backends/sdr-express-app/package.json').version")
+            echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Build and Push Backend Image (Dev)
         uses: docker/build-push-action@v6
