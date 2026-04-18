@@ -1,5 +1,7 @@
 import { DecimalPipe, NgClass } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import { SdrApiService, type SdrStatus } from './sdr-api.service';
+import { getRuntimeConfig } from './runtime-config';
 
 type MarkerDragMode = 'move' | 'resize-left' | 'resize-right' | null;
 
@@ -31,6 +33,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     { name: 'Signal Logger', active: false }
   ];
   protected isMarkerDragging = false;
+  protected backendConnected = false;
+  protected backendApiUrl = getRuntimeConfig().apiBaseUrl || '(same-origin)';
+  protected backendMessage = 'Waiting for backend status...';
 
   protected get markerWidthPct(): number {
     const ratio = this.bandwidthKhz / this.captureBandwidthKhz;
@@ -51,15 +56,21 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   private readonly onResize = () => this.resizeCanvases();
   private readonly minBandwidthKhz = 1;
   private readonly maxBandwidthKhz = 220;
+  private readonly sdrApi = inject(SdrApiService);
+  private tuneSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
   ngAfterViewInit(): void {
     this.resizeCanvases();
     window.addEventListener('resize', this.onResize);
+    this.loadBackendStatus();
     this.drawLoop();
   }
 
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.onResize);
+    if (this.tuneSyncTimer) {
+      clearTimeout(this.tuneSyncTimer);
+    }
     if (this.frameId) {
       cancelAnimationFrame(this.frameId);
     }
@@ -73,6 +84,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     if (mode !== 'WFM' && this.bandwidthKhz > 40) {
       this.bandwidthKhz = 16;
     }
+    this.scheduleTuneSync();
   }
 
   protected nudgeFrequency(deltaKhz: number): void {
@@ -80,10 +92,31 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.minFrequencyHz,
       Math.min(this.maxFrequencyHz, this.frequencyHz + deltaKhz * 1000)
     );
+    this.scheduleTuneSync();
   }
 
   protected clampFrequency(): void {
     this.frequencyHz = Math.max(this.minFrequencyHz, Math.min(this.maxFrequencyHz, this.frequencyHz));
+    this.scheduleTuneSync();
+  }
+
+  protected onFrequencyInput(event: Event): void {
+    this.frequencyHz = +((event.target as HTMLInputElement).value);
+    this.scheduleTuneSync();
+  }
+
+  protected onBandwidthInput(event: Event): void {
+    this.bandwidthKhz = +((event.target as HTMLInputElement).value);
+    this.scheduleTuneSync();
+  }
+
+  protected onGainInput(event: Event): void {
+    this.gainDb = +((event.target as HTMLInputElement).value);
+    this.scheduleTuneSync();
+  }
+
+  protected onSquelchInput(event: Event): void {
+    this.squelchDb = +((event.target as HTMLInputElement).value);
   }
 
   protected onSpectrumPointerDown(event: PointerEvent): void {
@@ -105,6 +138,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     const pointerPct = ((event.clientX - rect.left) / rect.width) * 100;
     const clampedPct = Math.max(0, Math.min(100, pointerPct));
     this.frequencyHz = this.percentageToFrequency(clampedPct);
+    this.scheduleTuneSync();
   }
 
   protected onSpectrumWheel(event: WheelEvent): void {
@@ -204,6 +238,72 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     const nextBandwidth = this.widthPctToBandwidthKhz(widthPct);
     this.bandwidthKhz = Math.max(this.minBandwidthKhz, Math.min(this.maxBandwidthKhz, nextBandwidth));
     this.frequencyHz = this.percentageToFrequency(centerPct);
+    this.scheduleTuneSync();
+  }
+
+  private loadBackendStatus(): void {
+    this.sdrApi.getStatus().subscribe({
+      next: (status) => {
+        this.applyBackendStatus(status, true);
+        this.backendConnected = true;
+        this.backendMessage = `Status loaded at ${new Date().toLocaleTimeString()}`;
+      },
+      error: () => {
+        this.backendConnected = false;
+        this.backendMessage = 'Backend unavailable. UI changes will retry when API is reachable.';
+      }
+    });
+  }
+
+  private scheduleTuneSync(): void {
+    if (this.tuneSyncTimer) {
+      clearTimeout(this.tuneSyncTimer);
+    }
+
+    this.tuneSyncTimer = setTimeout(() => {
+      this.pushTuneUpdate();
+    }, 180);
+  }
+
+  private pushTuneUpdate(): void {
+    this.sdrApi.tune({
+      frequencyHz: Math.round(this.frequencyHz),
+      bandwidthHz: Math.round(this.bandwidthKhz * 1000),
+      gainDb: Math.round(this.gainDb),
+      mode: this.toBackendMode(this.selectedMode)
+    }).subscribe({
+      next: (status) => {
+        this.applyBackendStatus(status, false);
+        this.backendConnected = true;
+        this.backendMessage = `Synced at ${new Date().toLocaleTimeString()}`;
+      },
+      error: () => {
+        this.backendConnected = false;
+        this.backendMessage = 'Sync failed. Check backend URL/runtime-config.js and API availability.';
+      }
+    });
+  }
+
+  private applyBackendStatus(status: SdrStatus, updateMode: boolean): void {
+    this.frequencyHz = status.frequencyHz;
+    this.bandwidthKhz = Math.max(this.minBandwidthKhz, Math.min(this.maxBandwidthKhz, Math.round(status.bandwidthHz / 1000)));
+    this.gainDb = status.gainDb;
+
+    if (updateMode && this.modes.includes(status.mode)) {
+      this.selectedMode = status.mode;
+    }
+  }
+
+  private toBackendMode(mode: string): 'AM' | 'FM' | 'USB' | 'LSB' | 'CW' {
+    if (mode === 'WFM' || mode === 'DSB') {
+      return 'FM';
+    }
+
+    if (mode === 'AM' || mode === 'FM' || mode === 'USB' || mode === 'LSB' || mode === 'CW') {
+      return mode;
+    }
+
+    return 'FM';
   }
 
   private percentageToFrequency(percentage: number): number {
