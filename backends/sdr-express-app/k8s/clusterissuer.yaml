@@ -4,7 +4,6 @@ metadata:
   name: letsencrypt-staging
 spec:
   acme:
-    # Change this to your real email before applying.
     email: admin@travler7282.com
     server: https://acme-staging-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
@@ -20,7 +19,6 @@ metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    # Change this to your real email before applying.
     email: admin@travler7282.com
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
