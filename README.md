@@ -22,7 +22,7 @@ https://github.com/travler7282/www-travler7282-com-frontend
 - `apps/landing-page`: Vite + TypeScript app (no UI framework). This is the main landing page and links to the framework-specific apps.
 - `apps/react-app`: React + TypeScript app built with Vite.
 - `apps/vue-app`: Vue 3 + TypeScript app built with Vite.
-- `apps/angular-app`: Angular app built with Angular CLI.
+- `apps/angular-app`: Angular app built with Angular CLI Angular Material. Mockup Software Defined Radio(SDR) application.
 
 ## Environments and Branch Mapping
 
