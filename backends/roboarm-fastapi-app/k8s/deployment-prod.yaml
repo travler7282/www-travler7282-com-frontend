@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: roboarm-fastapi-app
+  labels:
+    app: roboarm-fastapi-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: roboarm-fastapi-app
+  template:
+    metadata:
+      labels:
+        app: roboarm-fastapi-app
+    spec:
+      securityContext:
+        # Ensure the pod runs as the non-root user defined in the Dockerfile
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: roboarm-fastapi-app
+          image: docker.io/travler7282/roboarm-fastapi-app:0.1.0
+          securityContext:
+            # Completely block privilege escalation
+            allowPrivilegeEscalation: false
+            # Make the contain's own files unchangeable at runtime
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+              # NET_RAW is sometimes needed for BLE discovery depending on the kernel version
+              add:
+                - NET_RAW
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: dbus-socket
+              mountPath: /var/run/system_bus_socket
+            - name: tmp-volume
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+      volumes:
+        - name: dbus-socket
+          hostPath:
+            path: /var/run/system_bus_socket
+            type: Socket
+        - name: tmp-volume
+          # Necessary for FastAPI/Uvicorn temp files when root FS is read-only
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: roboarm-fastapi-app
+spec:
+  selector:
+    app: roboarm-fastapi-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: roboarm-fastapi-app
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - api.travler7282.com
+      secretName: roboarm-fastapi-app-tls
+  rules:
+    - host: api.travler7282.com
+      http:
+        paths:
+          - path: /roboarm/api/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: roboarm-fastapi-app
+                port:
+                  number: 80
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: roboarm-fastapi-app-tls
+spec:
+  secretName: roboarm-fastapi-app-tls
+  dnsNames:
+    - api.travler7282.com
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-prod
