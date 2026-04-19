@@ -59,6 +59,6 @@ Run from repository root:
 Run an individual app from the root with npm workspaces:
 
 - Landing page: `npm run dev --workspace landing-page`
-- React app: `npm run dev --workspace react-app`
-- Vue app: `npm run dev --workspace vue-app`
-- Angular app: `npm run start --workspace angular-app`
+- React app (RoboArm): `npm run dev --workspace react-app`
+- Vue app (WxStation): `npm run dev --workspace vue-app`
+- Angular app (SDRx): `npm run start --workspace angular-app`
