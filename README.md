@@ -1,5 +1,7 @@
 # www-travler7282-com
 
+## Frontends
+
 The www-travler7282-com repository is the home of the www.travler7282.com
 website showcasing work by Michael Hunt (travler7282). The root of the site
 is the landing-page app; this is a Vite app built without a UI framework.
@@ -9,11 +11,15 @@ displayed along with the tech stack and clicking on an app opens it in the
 browser. There are other features, links, skills, images, and items on the
 page as well.
 
+## Infrastructure
+
 The website is distributed on AWS CloudFront to provide a worldwide CDN. The
 site is distributed to edge devices which then cache and deliver content at
 faster speeds for vistors. In addition, a CloudFront function is used to
 route the user to the appropriate app when a subdirectory is added to the URL.
 This is needed since S3 buckets are used with CloudFront to serve static files.
+
+## Backends
 
 The backend for each app is hosted in my lab and runs on a Linux-based virtual
 machine, a K3s cluster, and containerized microservices for each backend. DNS
@@ -23,13 +29,31 @@ appropriate Kubernetes microservice. The entire setup demonstrates Engineering
 skills across a broad spectrum, including network, system, Cloud (DevOps),
 and software engineering using a variety of tech stacks, languages, and AWS services.
 
+## Additional Cloud Information
+
 There are other cloud based providers such as Azure and GCP that can be used with
 some modification to the existing infrastructure scripts.
 
-Repository:
-https://github.com/travler7282/www-travler7282-com
+## Repositories
 
-[LinkedIn](https://www.linkedin.com/in/travler7282)
+[GitHub Repository travler7282/www-travler7282-com](https://github.com/travler7282/www-travler7282-com)
+
+## Environments
+
+[Production Environment www.travler7282.com](https://www.travler7282.com)
+[Development Environment dev.travler7282.com](https://dev.travler7282.com)
+
+## Social Media
+
+[LinkedIn Profile](https://www.linkedin.com/in/travler7282)
+[X Profile](https://twitter.com/travler7282)
+[Intragram](https://www.instagram.com/travler7282)
+[Facebook](https://www.facebook.com/travler7282)
+
+## Source Control Profiles
+
+[GitHub](https://github.com/travler7282)
+[GitLab](https://gitlab.com/travler7282)
 
 ## Apps
 
