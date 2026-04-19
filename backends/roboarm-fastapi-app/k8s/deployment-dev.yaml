@@ -20,6 +20,9 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+        # Common gid for Linux video devices (/dev/video0) on many distros.
+        supplementalGroups:
+          - 44
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -37,6 +40,9 @@ spec:
               add:
                 - NET_RAW
           imagePullPolicy: Always
+          env:
+            - name: ROBOARM_CAMERA_DEVICE
+              value: /dev/video0
           ports:
             - containerPort: 8000
           resources:
@@ -49,6 +55,9 @@ spec:
           volumeMounts:
             - name: dbus-socket
               mountPath: /run/dbus/system_bus_socket
+            - name: camera-device
+              mountPath: /dev/video0
+              readOnly: true
             - name: tmp-volume
               mountPath: /tmp
           readinessProbe:
@@ -68,6 +77,10 @@ spec:
           hostPath:
             path: /run/dbus/system_bus_socket
             type: Socket
+        - name: camera-device
+          hostPath:
+            path: /dev/video0
+            type: CharDevice
         - name: tmp-volume
           # Necessary for FastAPI/Uvicorn temp files when root FS is read-only
           emptyDir: {}

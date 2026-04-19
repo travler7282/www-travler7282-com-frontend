@@ -1,16 +1,34 @@
 import asyncio
 import logging
+import os
+import threading
+from datetime import datetime, timezone
 from typing import Any, List, Optional
 
 from bleak import BleakClient, BleakScanner
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.responses import Response
 from pydantic import BaseModel
+
+try:
+    import cv2 as _cv2
+    cv2: Any = _cv2
+except Exception:  # pragma: no cover - runtime dependency availability
+    cv2 = None
 
 # Basic logging for BLE and WebSocket lifecycle events.
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("roboarm-backend")
 
 app = FastAPI(title="RoboArm BLE Controller")
+
+CAMERA_DEVICE = os.getenv("ROBOARM_CAMERA_DEVICE", "0")
+CAMERA_WIDTH = int(os.getenv("ROBOARM_CAMERA_WIDTH", "1280"))
+CAMERA_HEIGHT = int(os.getenv("ROBOARM_CAMERA_HEIGHT", "720"))
+CAMERA_JPEG_QUALITY = int(os.getenv("ROBOARM_CAMERA_JPEG_QUALITY", "80"))
+
+_camera_lock = threading.Lock()
+_camera_capture: Any | None = None
 
 
 class BLEDevice(BaseModel):
@@ -42,6 +60,119 @@ def _format_hex_payload(data: bytes) -> str:
     return " ".join(hex_response[i : i + 2] for i in range(0, len(hex_response), 2))
 
 
+def _camera_svg(message: str) -> str:
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    return f"""<svg xmlns='http://www.w3.org/2000/svg' width='1280' height='720' viewBox='0 0 1280 720'>
+  <defs>
+    <linearGradient id='bg' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='#020617'/>
+      <stop offset='100%' stop-color='#0f172a'/>
+    </linearGradient>
+  </defs>
+  <rect width='1280' height='720' fill='url(#bg)'/>
+  <rect x='22' y='22' width='1236' height='676' rx='14' fill='none' stroke='#334155' stroke-width='2'/>
+  <line x1='640' y1='0' x2='640' y2='720' stroke='#1e293b' stroke-width='2'/>
+  <line x1='0' y1='360' x2='1280' y2='360' stroke='#1e293b' stroke-width='2'/>
+  <circle cx='640' cy='360' r='48' fill='none' stroke='#38bdf8' stroke-width='2' opacity='0.5'/>
+  <text x='40' y='58' fill='#ef4444' font-family='monospace' font-size='24'>LIVE FEED</text>
+  <text x='40' y='96' fill='#94a3b8' font-family='monospace' font-size='20'>Source: USB camera backend endpoint</text>
+  <text x='40' y='132' fill='#93c5fd' font-family='monospace' font-size='20'>Timestamp: {now}</text>
+  <text x='40' y='682' fill='#fca5a5' font-family='monospace' font-size='18'>{message}</text>
+</svg>"""
+
+
+def _camera_target() -> int | str:
+    if CAMERA_DEVICE.isdigit():
+        return int(CAMERA_DEVICE)
+    return CAMERA_DEVICE
+
+
+def _ensure_camera_open() -> tuple[bool, str]:
+    global _camera_capture
+
+    if cv2 is None:
+        return False, "opencv not available in runtime"
+
+    if _camera_capture is not None and _camera_capture.isOpened():
+        return True, ""
+
+    target = _camera_target()
+    capture = cv2.VideoCapture(target)
+    if not capture or not capture.isOpened():
+        if capture:
+            capture.release()
+        return False, f"unable to open camera target {target}"
+
+    capture.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
+    capture.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
+    _camera_capture = capture
+    logger.info("Camera opened on target %s", target)
+    return True, ""
+
+
+def _read_camera_frame_jpeg() -> tuple[Optional[bytes], str]:
+    global _camera_capture
+
+    with _camera_lock:
+        opened, error = _ensure_camera_open()
+        if not opened:
+            return None, error
+
+        assert _camera_capture is not None
+        ok, frame = _camera_capture.read()
+        if not ok or frame is None:
+            _camera_capture.release()
+            _camera_capture = None
+            reopened, error = _ensure_camera_open()
+            if not reopened:
+                return None, error
+            assert _camera_capture is not None
+            ok, frame = _camera_capture.read()
+            if not ok or frame is None:
+                return None, "camera opened but frame capture failed"
+
+        encoded_ok, encoded = cv2.imencode(
+            ".jpg",
+            frame,
+            [int(cv2.IMWRITE_JPEG_QUALITY), CAMERA_JPEG_QUALITY],
+        )
+        if not encoded_ok:
+            return None, "jpeg encoding failed"
+
+        return encoded.tobytes(), ""
+
+
+@app.on_event("shutdown")
+def _release_camera() -> None:
+    global _camera_capture
+    with _camera_lock:
+        if _camera_capture is not None:
+            _camera_capture.release()
+            _camera_capture = None
+            logger.info("Camera released")
+
+
+@app.get("/camera/frame")
+@app.get("/camera/feed")
+@app.get("/roboarm/api/v1/camera/frame")
+@app.get("/roboarm/api/v1/camera/feed")
+async def camera_frame() -> Response:
+    jpeg, error = await asyncio.to_thread(_read_camera_frame_jpeg)
+    if jpeg is not None:
+        return Response(
+            content=jpeg,
+            media_type="image/jpeg",
+            headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"},
+        )
+
+    svg = _camera_svg(f"Camera unavailable: {error}")
+    return Response(
+        content=svg,
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"},
+    )
+
+
 @app.get("/scan", response_model=List[BLEDevice])
 @app.get("/roboarm/api/v1/scan", response_model=List[BLEDevice])
 async def scan_devices() -> List[BLEDevice]:
@@ -49,8 +180,9 @@ async def scan_devices() -> List[BLEDevice]:
     try:
         devices = await BleakScanner.discover(timeout=5.0)
         return [
-            BLEDevice(name=device.name or "Unknown Device", address=device.address)
+            BLEDevice(name=device.name, address=device.address)
             for device in devices
+            if device.name == "Hiwonder"
         ]
     except Exception as exc:
         logger.exception("Scan failed")

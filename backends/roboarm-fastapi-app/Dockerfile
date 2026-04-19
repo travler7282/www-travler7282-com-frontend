@@ -11,6 +11,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bluez \
     libdbus-1-3 \
+    libgl1 \
+    libglib2.0-0 \
+    libv4l-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a dedicated non-root user and group
