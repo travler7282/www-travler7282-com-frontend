@@ -4,22 +4,82 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <title>Framework Showcase | travler7282</title>
+    <title>App Showcase | travler7282</title>
   </head>
   <body>
-    <h1>Project Monorepo Showcase</h1>
+    <h1>Michael J. Hunt | Senior Software | Cloud | Platform Engineer</h1>
+    <div class="about">
+      <img src="/profile/profile_picture.png" alt="Profile Picture" />
+      <div class="bio-content">
+        <p>
+          I am a Senior Software and DevOps Engineer (<strong>KC8GIJ</strong>) with over 26 years 
+          of experience designing distributed systems across aerospace, telecommunications, 
+          and federal cloud environments. My work spans from <strong>low-level systems 
+          programming</strong> and <strong>Platform Engineering</strong> to building modern, 
+          resilient <strong>Full-Stack architectures</strong>.
+        </p>
+        <div class="social-links">
+          <a href="https://www.linkedin.com/in/travler7282" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="https://www.github.com/travler7282" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://gitlab.com/travler7282" target="_blank" rel="noopener">GitLab</a>
+          <a href="https://hub.docker.com/u/travler7282" target="_blank" rel="noopener">Docker Hub</a>
+        </div>
+        <div class="social-links secondary">
+          <span class="link-label">Interests:</span>
+          <a href="https://www.youtube.com/@michaelhunt4131" target="_blank" rel="noopener">Main YouTube</a>
+          <a href="https://www.youtube.com/@JourneyToPottery" target="_blank" rel="noopener">Journey to Pottery</a>
+          <a href="https://www.qrz.com/db/KC8GIJ" target="_blank" rel="noopener">QRZ</a>
+          <a href="https://www.w3vpr.org" target="_blank" rel="noopener">Anne Arundel Radio Club</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="expertise">
+      <div class="skill-group">
+        <h3>Systems & Software</h3>
+        <div class="tags">
+          <span>Python</span> <span>Java</span> <span>C/C++</span> <span>TypeScript</span> 
+          <span>Node.js</span> <span>Full-Stack Arch</span> <span>Go</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <h3>Platform & Infrastructure</h3>
+        <div class="tags">
+          <span>Kubernetes</span> <span>Docker</span> <span>OpenShift</span> 
+          <span>AWS GovCloud</span> <span>OpenStack</span> <span>Virtualization</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <h3>DevSecOps & Cybersecurity</h3>
+        <div class="tags">
+          <span>Ansible</span> <span>CI/CD Pipelines</span> <span>GitLab CI</span> 
+          <span>Observability</span> <span>DoD STIG</span> <span>FIPS/NIST</span>
+        </div>
+      </div>
+    </div>
+
+    <hr class="separator" />
+
+    <p>Select an app below to get started.</p>
+
     <div class="grid">
+      <a href="/angular/" class="card">
+        <h2 class="angular">SDRx (Mockup WIP)</h2>
+        <img src="/angular/favicon.svg" alt="Icon" />
+        <p>A software defined radio: users control a RTL-SDR receiver and demodulators.</p>
+        <p>Tech Stack: Angular Standalone Components + Node.js Express + WebSockets</p>
+      </a>
       <a href="/react/" class="card">
-        <h2 class="react">React</h2>
-        <p>Vite + TypeScript</p>
+        <h2 class="react">RoboArm (Boilerplate WIP)</h2>
+        <img src="/react/favicon.svg" alt="Icon" />
+        <p>A robotic arm controller: users control a robotic arm.</p>
+        <p>Tech Stack: React + Vite + TypeScript + FastAPI</p>
       </a>
       <a href="/vue/" class="card">
-        <h2 class="vue">Vue</h2>
-        <p>Vite + TypeScript</p>
-      </a>
-      <a href="/angular/" class="card">
-        <h2 class="angular">Angular</h2>
-        <p>Standalone Components</p>
+        <h2 class="vue">WxStation (Boilerplate WIP)</h2>
+        <img src="/vue/favicon.svg" alt="Icon" />
+        <p>A weather station monitor: real-time data from an Arduino based device.</p>
+        <p>Tech Stack: Vue + Vite + TypeScript + FastAPI</p>
       </a>
     </div>
     <script type="module" src="/src/main.ts"></script>
