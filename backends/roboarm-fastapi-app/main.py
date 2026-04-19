@@ -19,11 +19,13 @@ class BLEDevice(BaseModel):
 
 
 @app.get("/healthz")
+@app.get("/roboarm/api/v1/healthz")
 async def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
 @app.get("/readyz")
+@app.get("/roboarm/api/v1/readyz")
 async def readyz() -> dict[str, str]:
     return {"status": "ready"}
 
@@ -41,6 +43,7 @@ def _format_hex_payload(data: bytes) -> str:
 
 
 @app.get("/scan", response_model=List[BLEDevice])
+@app.get("/roboarm/api/v1/scan", response_model=List[BLEDevice])
 async def scan_devices() -> List[BLEDevice]:
     """Scan for nearby BLE devices reachable from this runtime."""
     try:
@@ -55,6 +58,7 @@ async def scan_devices() -> List[BLEDevice]:
 
 
 @app.websocket("/ws/terminal")
+@app.websocket("/roboarm/api/v1/ws/terminal")
 async def roboarm_ws_terminal(websocket: WebSocket) -> None:
     await websocket.accept()
 

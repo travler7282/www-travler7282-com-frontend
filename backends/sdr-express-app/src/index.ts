@@ -33,19 +33,19 @@ app.use(cors({ origin: corsOrigin }));
 app.use(express.json({ limit: '512kb' }));
 app.use(morgan('combined'));
 
-app.get('/healthz', (_req: Request, res: Response) => {
+app.get(['/healthz', '/srdx/api/v1/healthz'], (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
 });
 
-app.get('/readyz', (_req: Request, res: Response) => {
+app.get(['/readyz', '/srdx/api/v1/readyz'], (_req: Request, res: Response) => {
   res.status(200).json({ ready: true, service: 'sdr-express-app' });
 });
 
-app.get('/api/sdr/status', (_req: Request, res: Response) => {
+app.get(['/api/sdr/status', '/srdx/api/v1/status', '/srdx/api/v1/api/sdr/status'], (_req: Request, res: Response) => {
   res.status(200).json(sdrState);
 });
 
-app.post('/api/sdr/tune', (req: Request, res: Response) => {
+app.post(['/api/sdr/tune', '/srdx/api/v1/tune', '/srdx/api/v1/api/sdr/tune'], (req: Request, res: Response) => {
   const { frequencyHz, bandwidthHz, gainDb, sampleRateHz, mode } = req.body as Partial<SdrState>;
 
   if (typeof frequencyHz === 'number') {
