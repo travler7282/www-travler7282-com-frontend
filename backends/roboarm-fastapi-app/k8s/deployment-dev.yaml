@@ -36,7 +36,7 @@ spec:
               # NET_RAW is sometimes needed for BLE discovery depending on the kernel version
               add:
                 - NET_RAW
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           resources:
