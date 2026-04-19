@@ -29,6 +29,8 @@ some modification to the existing infrastructure scripts.
 Repository:
 https://github.com/travler7282/www-travler7282-com
 
+[LinkedIn](https://www.linkedin.com/in/travler7282)
+
 ## Apps
 
 - `apps/landing-page`: Vite + TypeScript app (no UI framework). This is the main landing page and links to the framework-specific apps.
