@@ -218,7 +218,7 @@ const App: React.FC = () => {
     };
   };
 
-  const sendSocketMessage = (payload: Record<string, string>) => {
+  const sendSocketMessage = (payload: Record<string, string | number>) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       setStatus('WebSocket is not connected');
       appendTerminal('ERROR websocket not connected');
