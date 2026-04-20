@@ -156,6 +156,11 @@ const App: React.FC = () => {
     'RoboArm terminal ready.',
   ]);
 
+  const [backendOpen, setBackendOpen] = useState<boolean>(false);
+  const [deviceOpen, setDeviceOpen] = useState<boolean>(false);
+  const [ioOpen, setIoOpen] = useState<boolean>(false);
+  const [uuidsOpen, setUuidsOpen] = useState<boolean>(false);
+
   const switchPreset = (preset: BackendPreset) => {
     setBackendPreset(preset);
     if (preset === 'custom') {
@@ -528,117 +533,157 @@ const App: React.FC = () => {
           <h2 className="panel-title">Manual Control</h2>
 
           <div className="control-group">
-            <h3 className="group-label">Backend Link</h3>
-            <div className="device-actions">
-              <button type="button" className="action-button" onClick={connectSocket}>
-                Reconnect WS
+            <h3 className="group-label">Connection</h3>
+
+            {/* Backend & Preset */}
+            <div className="collapsible-section">
+              <button type="button" className="section-toggle" onClick={() => setBackendOpen((v) => !v)}>
+                <span>Backend &amp; Preset</span>
+                <span className="chevron">{backendOpen ? '▾' : '▸'}</span>
               </button>
-              <button type="button" className="action-button" onClick={() => void scanDevices()} disabled={scanLoading}>
-                {scanLoading ? 'Scanning...' : 'Scan Devices'}
-              </button>
-            </div>
-
-            <label className="field-label" htmlFor="backend-preset">Backend Preset</label>
-            <select
-              id="backend-preset"
-              className="field-input"
-              value={backendPreset}
-              onChange={(e) => switchPreset(e.target.value as BackendPreset)}
-            >
-              <option value="current">Current Host</option>
-              <option value="dev">Dev API Host</option>
-              <option value="local">Local Backend</option>
-              <option value="custom">Custom URL</option>
-            </select>
-
-            <label className="field-label" htmlFor="custom-backend-url">Backend URL</label>
-            <div className="url-row">
-              <input
-                id="custom-backend-url"
-                className="field-input"
-                value={customBackendUrl}
-                onChange={(e) => setCustomBackendUrl(e.target.value)}
-                placeholder="https://dev-api.travler7282.com/roboarm/api/v1"
-              />
-              <button type="button" className="action-button" onClick={applyCustomUrl}>
-                Apply
-              </button>
-            </div>
-
-            <label className="field-label" htmlFor="ble-address">Device</label>
-            <select
-              id="ble-address"
-              className="field-input"
-              value={selectedAddress}
-              onChange={(e) => setSelectedAddress(e.target.value)}
-            >
-              <option value="">Select BLE device</option>
-              {devices.map((device) => (
-                <option key={device.address} value={device.address}>
-                  {device.name} ({device.address})
-                </option>
-              ))}
-            </select>
-            <button type="button" className="action-button action-button-wide" onClick={connectBleDevice}>
-              Connect Device
-            </button>
-
-            <label className="field-label" htmlFor="tx-handle">TX Handle</label>
-            <input
-              id="tx-handle"
-              className="field-input"
-              value={txHandle ?? ''}
-              onChange={(e) => {
-                const val = e.target.value.trim();
-                setTxHandle(val ? parseInt(val, 10) : null);
-              }}
-              placeholder="Characteristic handle for writes"
-            />
-
-            <label className="field-label" htmlFor="rx-handle">RX Handle</label>
-            <input
-              id="rx-handle"
-              className="field-input"
-              value={rxHandle ?? ''}
-              onChange={(e) => {
-                const val = e.target.value.trim();
-                setRxHandle(val ? parseInt(val, 10) : null);
-              }}
-              placeholder="Characteristic handle for notifications"
-            />
-
-            <button type="button" className="action-button action-button-wide" onClick={configureIo}>
-              Configure I/O
-            </button>
-
-            {services.length > 0 ? (
-              <div className="service-list">
-                <div className="service-title">Discovered Services</div>
-                {services.map((service) => (
-                  <div className="service-item" key={service.uuid}>
-                    <div className="service-uuid">{service.uuid}</div>
-                    {service.characteristics.map((characteristic, index) => (
-                      <button
-                        key={`${service.uuid}-${characteristic.uuid}-${characteristic.handle ?? index}`}
-                        type="button"
-                        className="chip-button"
-                        onClick={() => {
-                          if (characteristic.handle === null) {
-                            appendTerminal(`Characteristic ${characteristic.uuid} has no numeric handle in payload`);
-                            return;
-                          }
-                          setTxHandle(characteristic.handle);
-                          setRxHandle(characteristic.handle);
-                        }}
-                      >
-                        {characteristic.uuid}
-                        {characteristic.handle !== null ? ` (h:${characteristic.handle})` : ''}
-                      </button>
-                    ))}
+              {backendOpen && (
+                <div className="section-body">
+                  <div className="device-actions">
+                    <button type="button" className="action-button" onClick={connectSocket}>
+                      Reconnect WS
+                    </button>
+                    <button type="button" className="action-button" onClick={() => void scanDevices()} disabled={scanLoading}>
+                      {scanLoading ? 'Scanning...' : 'Scan Devices'}
+                    </button>
                   </div>
-                ))}
+                  <label className="field-label" htmlFor="backend-preset">Backend Preset</label>
+                  <select
+                    id="backend-preset"
+                    className="field-input"
+                    value={backendPreset}
+                    onChange={(e) => switchPreset(e.target.value as BackendPreset)}
+                  >
+                    <option value="current">Current Host</option>
+                    <option value="dev">Dev API Host</option>
+                    <option value="local">Local Backend</option>
+                    <option value="custom">Custom URL</option>
+                  </select>
+                  <label className="field-label" htmlFor="custom-backend-url">Backend URL</label>
+                  <div className="url-row">
+                    <input
+                      id="custom-backend-url"
+                      className="field-input"
+                      value={customBackendUrl}
+                      onChange={(e) => setCustomBackendUrl(e.target.value)}
+                      placeholder="https://dev-api.travler7282.com/roboarm/api/v1"
+                    />
+                    <button type="button" className="action-button" onClick={applyCustomUrl}>
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Device Connection */}
+            <div className="collapsible-section">
+              <button type="button" className="section-toggle" onClick={() => setDeviceOpen((v) => !v)}>
+                <span>Device Connection</span>
+                <span className="chevron">{deviceOpen ? '▾' : '▸'}</span>
+              </button>
+              {deviceOpen && (
+                <div className="section-body">
+                  <label className="field-label" htmlFor="ble-address">Device</label>
+                  <select
+                    id="ble-address"
+                    className="field-input"
+                    value={selectedAddress}
+                    onChange={(e) => setSelectedAddress(e.target.value)}
+                  >
+                    <option value="">Select BLE device</option>
+                    {devices.map((device) => (
+                      <option key={device.address} value={device.address}>
+                        {device.name} ({device.address})
+                      </option>
+                    ))}
+                  </select>
+                  <button type="button" className="action-button action-button-wide" onClick={connectBleDevice}>
+                    Connect Device
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* TX / RX */}
+            <div className="collapsible-section">
+              <button type="button" className="section-toggle" onClick={() => setIoOpen((v) => !v)}>
+                <span>TX / RX Handles</span>
+                <span className="chevron">{ioOpen ? '▾' : '▸'}</span>
+              </button>
+              {ioOpen && (
+                <div className="section-body">
+                  <label className="field-label" htmlFor="tx-handle">TX Handle</label>
+                  <input
+                    id="tx-handle"
+                    className="field-input"
+                    value={txHandle ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value.trim();
+                      setTxHandle(val ? parseInt(val, 10) : null);
+                    }}
+                    placeholder="Characteristic handle for writes"
+                  />
+                  <label className="field-label" htmlFor="rx-handle">RX Handle</label>
+                  <input
+                    id="rx-handle"
+                    className="field-input"
+                    value={rxHandle ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value.trim();
+                      setRxHandle(val ? parseInt(val, 10) : null);
+                    }}
+                    placeholder="Characteristic handle for notifications"
+                  />
+                  <button type="button" className="action-button action-button-wide" onClick={configureIo}>
+                    Configure I/O
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* UUIDs */}
+            {services.length > 0 && (
+              <div className="collapsible-section">
+                <button type="button" className="section-toggle" onClick={() => setUuidsOpen((v) => !v)}>
+                  <span>Discovered Services ({services.length})</span>
+                  <span className="chevron">{uuidsOpen ? '▾' : '▸'}</span>
+                </button>
+                {uuidsOpen && (
+                  <div className="section-body">
+                    <div className="service-list">
+                      {services.map((service) => (
+                        <div className="service-item" key={service.uuid}>
+                          <div className="service-uuid">{service.uuid}</div>
+                          {service.characteristics.map((characteristic, index) => (
+                            <button
+                              key={`${service.uuid}-${characteristic.uuid}-${characteristic.handle ?? index}`}
+                              type="button"
+                              className="chip-button"
+                              onClick={() => {
+                                if (characteristic.handle === null) {
+                                  appendTerminal(`Characteristic ${characteristic.uuid} has no numeric handle in payload`);
+                                  return;
+                                }
+                                setTxHandle(characteristic.handle);
+                                setRxHandle(characteristic.handle);
+                              }}
+                            >
+                              {characteristic.uuid}
+                              {characteristic.handle !== null ? ` (h:${characteristic.handle})` : ''}
+                            </button>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            ) : null}
+            )}
           </div>
 
           <div className="control-group">
