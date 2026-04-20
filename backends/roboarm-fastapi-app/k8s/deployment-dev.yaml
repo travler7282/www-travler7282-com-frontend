@@ -20,17 +20,20 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
-        # Common gid for Linux video devices (/dev/video0) on many distros.
+        # Video device group IDs vary across distros/cloud images.
+        # Keep a small allowlist of common gids so /dev/video* is readable.
         supplementalGroups:
+          - 39
           - 44
+          - 986
+          - 998
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: roboarm-fastapi-app
           image: docker.io/travler7282/roboarm-fastapi-app:0.1.0-dev
           securityContext:
-            # Completely block privilege escalation
-            allowPrivilegeEscalation: false
+            privileged: true
             # Make the contain's own files unchangeable at runtime
             readOnlyRootFilesystem: true
             capabilities:
@@ -43,6 +46,10 @@ spec:
           env:
             - name: ROBOARM_CAMERA_DEVICE
               value: /dev/video0
+            - name: ROBOARM_CAMERA_JPEG_QUALITY
+              value: "60"
+            - name: ROBOARM_CORS_ALLOWED_ORIGINS
+              value: https://dev.travler7282.com,https://travler7282.com,https://www.travler7282.com,http://localhost:4200,http://localhost:5173,http://localhost:4173
           ports:
             - containerPort: 8000
           resources:
@@ -57,7 +64,6 @@ spec:
               mountPath: /run/dbus/system_bus_socket
             - name: camera-device
               mountPath: /dev/video0
-              readOnly: true
             - name: tmp-volume
               mountPath: /tmp
           readinessProbe:
