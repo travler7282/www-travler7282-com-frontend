@@ -42,7 +42,7 @@ spec:
               # NET_RAW is sometimes needed for BLE discovery depending on the kernel version
               add:
                 - NET_RAW
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: ROBOARM_CAMERA_DEVICE
               value: /dev/video0

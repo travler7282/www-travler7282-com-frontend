@@ -17,7 +17,7 @@ spec:
       containers:
         - name: sdr-express-app
           image: docker.io/travler7282/sdr-express-app:0.1.0
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
