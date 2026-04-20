@@ -375,11 +375,19 @@ async def roboarm_ws_terminal(websocket: WebSocket) -> None:
                     )
                     continue
 
-                await client.write_gatt_char(tx_uuid, payload_bytes, response=True)
-                await _ws_send_json_safe(
-                    websocket,
-                    {"type": "status", "message": "Command Sent"},
-                )
+                try:
+                    await client.write_gatt_char(tx_uuid, payload_bytes, response=False)
+                    logger.info(f"Wrote {len(payload_bytes)} bytes to {tx_uuid}")
+                    await _ws_send_json_safe(
+                        websocket,
+                        {"type": "status", "message": "Command Sent"},
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to write to characteristic {tx_uuid}: {e}")
+                    await _ws_send_json_safe(
+                        websocket,
+                        {"type": "error", "message": f"Write failed: {str(e)}"},
+                    )
 
             else:
                 await _ws_send_json_safe(
