@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import re
 import threading
 from datetime import datetime, timezone
 from typing import Any, List, Optional
@@ -99,6 +100,13 @@ def _camera_svg(message: str) -> str:
 def _camera_target() -> int | str:
     if CAMERA_DEVICE.isdigit():
         return int(CAMERA_DEVICE)
+
+    # Normalize /dev/videoN paths to numeric index so OpenCV uses camera capture backends
+    # instead of treating the path like a regular image/video filename.
+    match = re.fullmatch(r"/dev/video(\d+)", CAMERA_DEVICE)
+    if match:
+        return int(match.group(1))
+
     return CAMERA_DEVICE
 
 
@@ -112,7 +120,11 @@ def _ensure_camera_open() -> tuple[bool, str]:
         return True, ""
 
     target = _camera_target()
-    capture = cv2.VideoCapture(target)
+    # Force V4L2 for Linux camera devices to avoid fallback decoder paths.
+    if isinstance(target, int):
+        capture = cv2.VideoCapture(target, cv2.CAP_V4L2)
+    else:
+        capture = cv2.VideoCapture(target)
     if not capture or not capture.isOpened():
         if capture:
             capture.release()
