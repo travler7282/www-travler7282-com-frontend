@@ -25,25 +25,45 @@ interface BLEDevice {
   address: string;
 }
 
+interface CharacteristicInfo {
+  uuid: string;
+  handle: number | null;
+}
+
+interface RawServiceInfo {
+  uuid: string;
+  characteristics: Array<string | { uuid: string; handle: number }>;
+}
+
 interface ServiceInfo {
   uuid: string;
-  characteristics: Array<{ uuid: string; handle: number }>;
+  characteristics: CharacteristicInfo[];
 }
 
 interface WsInboundMessage {
   type: string;
   message?: string;
   payload?: string;
-  services?: ServiceInfo[];
+  services?: RawServiceInfo[];
 }
 
 type BackendPreset = 'current' | 'dev' | 'local' | 'custom';
 
 const App: React.FC = () => {
-  const currentHostDefault = useMemo(
-    () => `${window.location.protocol}//${window.location.host}/roboarm/api/v1`,
-    [],
-  );
+  const currentHostDefault = useMemo(() => {
+    const protocol = window.location.protocol;
+    const host = window.location.hostname;
+
+    if (host === 'www.travler7282.com' || host === 'travler7282.com') {
+      return `${protocol}//api.travler7282.com/roboarm/api/v1`;
+    }
+
+    if (host === 'dev.travler7282.com') {
+      return `${protocol}//dev-api.travler7282.com/roboarm/api/v1`;
+    }
+
+    return `${protocol}//${window.location.host}/roboarm/api/v1`;
+  }, []);
 
   const envDefault = useMemo(() => {
     const fromEnv = import.meta.env.VITE_ROBOARM_API_BASE;
@@ -141,6 +161,21 @@ const App: React.FC = () => {
     setTerminalLines((prev) => [...prev.slice(-79), `[${timestamp}] ${line}`]);
   };
 
+  const normalizeServices = (rawServices: RawServiceInfo[]): ServiceInfo[] => {
+    return rawServices.map((service) => ({
+      uuid: service.uuid,
+      characteristics: service.characteristics.map((characteristic) => {
+        if (typeof characteristic === 'string') {
+          return { uuid: characteristic, handle: null };
+        }
+        return {
+          uuid: characteristic.uuid,
+          handle: Number.isInteger(characteristic.handle) ? characteristic.handle : null,
+        };
+      }),
+    }));
+  };
+
   const parseMessage = (raw: string): WsInboundMessage | null => {
     try {
       return JSON.parse(raw) as WsInboundMessage;
@@ -185,13 +220,17 @@ const App: React.FC = () => {
           appendTerminal(`STATUS ${message.message}`);
         }
         if (Array.isArray(message.services)) {
-          setServices(message.services);
-          const chars = message.services.flatMap((service) => service.characteristics);
-          if (txHandle === null && chars[0]) {
-            setTxHandle(chars[0].handle);
+          const normalizedServices = normalizeServices(message.services);
+          setServices(normalizedServices);
+          const chars = normalizedServices.flatMap((service) => service.characteristics);
+          const firstWithHandle = chars.find((char) => char.handle !== null);
+          const secondWithHandle = chars.filter((char) => char.handle !== null)[1] ?? firstWithHandle;
+
+          if (txHandle === null && firstWithHandle?.handle !== null) {
+            setTxHandle(firstWithHandle.handle);
           }
-          if (rxHandle === null && chars[1]) {
-            setRxHandle(chars[1].handle);
+          if (rxHandle === null && secondWithHandle?.handle !== null) {
+            setRxHandle(secondWithHandle.handle);
           }
         }
         return;
@@ -483,17 +522,22 @@ const App: React.FC = () => {
                 {services.map((service) => (
                   <div className="service-item" key={service.uuid}>
                     <div className="service-uuid">{service.uuid}</div>
-                    {service.characteristics.map((characteristic) => (
+                    {service.characteristics.map((characteristic, index) => (
                       <button
-                        key={`${service.uuid}-${characteristic.handle}`}
+                        key={`${service.uuid}-${characteristic.uuid}-${characteristic.handle ?? index}`}
                         type="button"
                         className="chip-button"
                         onClick={() => {
+                          if (characteristic.handle === null) {
+                            appendTerminal(`Characteristic ${characteristic.uuid} has no numeric handle in payload`);
+                            return;
+                          }
                           setTxHandle(characteristic.handle);
                           setRxHandle(characteristic.handle);
                         }}
                       >
-                        {characteristic.uuid.substring(0, 8)} (h:{characteristic.handle})
+                        {characteristic.uuid}
+                        {characteristic.handle !== null ? ` (h:${characteristic.handle})` : ''}
                       </button>
                     ))}
                   </div>
