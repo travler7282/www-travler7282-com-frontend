@@ -450,7 +450,7 @@ const App: React.FC = () => {
 
     const interval = window.setInterval(() => {
       setCameraTick(Date.now());
-    }, 1500);
+    }, 250);
 
     return () => {
       window.clearInterval(interval);
