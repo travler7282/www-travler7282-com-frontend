@@ -28,7 +28,7 @@ spec:
           - 986
           - 998
         seccompProfile:
-          type: RuntimeDefault
+          type: Unconfined
       containers:
         - name: roboarm-fastapi-app
           image: docker.io/travler7282/roboarm-fastapi-app:0.1.0
