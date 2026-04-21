@@ -59,12 +59,12 @@ interface WsInboundMessage {
 type BackendPreset = 'current' | 'dev' | 'local' | 'custom';
 
 const SERVO_IDS: Record<ArmJoint, number> = {
-  baseRotate: 1,
-  shoulderBend: 2,
-  elbowBend: 3,
-  wristBend: 4,
-  gripperRotate: 5,
-  gripperClaw: 6,
+  baseRotate: 6,
+  shoulderBend: 5,
+  elbowBend: 4,
+  wristBend: 3,
+  gripperRotate: 2,
+  gripperClaw: 1,
 };
 
 const DEFAULT_JOINTS: ArmState = {

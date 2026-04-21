@@ -5,10 +5,10 @@ Landing page application built with Vite + TypeScript (no UI framework).
 ## What It Does
 
 - Serves as the root experience for the site
-- Provides navigation cards to:
-  - `/react/` (React app)
-  - `/vue/` (Vue app)
-  - `/angular/` (Angular app)
+- Provides navigation cards to the apps:
+  - `/react/` (React app - RoboArm)
+  - `/vue/` (Vue app - WxStation)
+  - `/angular/` (Angular app - SDRx)
 
 ## Scripts
 
