@@ -1,0 +1,25 @@
+// See https://aka.ms/devcontainer.json for more information.
+{
+	"name": "www-travler7282-com",
+	// Node 24 image — matches the engines requirement in package.json.
+	// Python is added as a feature for the roboarm-fastapi-app backend.
+	"image": "mcr.microsoft.com/devcontainers/javascript-node:24",
+	"features": {
+		"ghcr.io/devcontainers/features/python:1": {
+			"version": "3.11"
+		}
+	},
+	// Install all workspace dependencies automatically on environment start.
+	"postCreateCommand": "npm install",
+	// Pre-open ports for each app's dev server.
+	// landing-page: 5173, react-app: 5174, vue-app: 5175, angular-app: 4200
+	// sdr-express-app backend: 3000
+	"forwardPorts": [4200, 5173, 5174, 5175, 3000],
+	"portsAttributes": {
+		"4200": { "label": "Angular (SDRx)" },
+		"5173": { "label": "Landing Page" },
+		"5174": { "label": "React (RoboArm)" },
+		"5175": { "label": "Vue (WXStation)" },
+		"3000": { "label": "SDR Express Backend" }
+	}
+}
