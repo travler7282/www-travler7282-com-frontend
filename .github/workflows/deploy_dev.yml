@@ -100,22 +100,58 @@ jobs:
           npm install --include=optional
           npm ls typescript --workspaces --depth=0
           npm run build:all
+          echo "Build completed. Verifying dist folders..."
+          ls -la apps/landing-page/ | grep dist || echo "⚠️ WARNING: landing-page/dist not found"
+          ls -la apps/roboarm/ | grep dist || echo "⚠️ WARNING: roboarm/dist not found"
+          ls -la apps/wxstation/ | grep dist || echo "⚠️ WARNING: wxstation/dist not found"
+          ls -la apps/sdrx/ | grep dist || echo "⚠️ WARNING: sdrx/dist not found"
 
       - name: Prepare Deployment Directory
         run: |
           mkdir -p deploy/roboarm deploy/wxstation deploy/sdrx
           
-          # Deploy landing page to the root
-          cp -r apps/landing-page/dist/* ./deploy/
+          # Deploy landing page to the root (with error handling)
+          if [ -d "apps/landing-page/dist" ]; then
+            cp -r apps/landing-page/dist/* ./deploy/
+            echo "✓ Landing page deployed"
+          else
+            echo "✗ ERROR: apps/landing-page/dist not found"
+            exit 1
+          fi
           
-          # Deploy sub-apps to their respective routes
-          cp -r apps/roboarm/dist/* ./deploy/roboarm/
-          cp -r apps/wxstation/dist/* ./deploy/wxstation/
+          # Deploy roboarm
+          if [ -d "apps/roboarm/dist" ]; then
+            cp -r apps/roboarm/dist/* ./deploy/roboarm/
+            echo "✓ RoboArm deployed"
+          else
+            echo "✗ ERROR: apps/roboarm/dist not found"
+            exit 1
+          fi
           
-          # Angular builds to a subfolder within dist
+          # Deploy wxstation
+          if [ -d "apps/wxstation/dist" ]; then
+            cp -r apps/wxstation/dist/* ./deploy/wxstation/
+            echo "✓ WXStation deployed"
+          else
+            echo "✗ ERROR: apps/wxstation/dist not found"
+            exit 1
+          fi
+          
+          # Deploy SDRx (Angular builds to a subfolder within dist)
           if [ -d "apps/sdrx/dist/sdrx/browser" ]; then
             cp -r apps/sdrx/dist/sdrx/browser/. ./deploy/sdrx/
+            echo "✓ SDRx deployed"
+          elif [ -d "apps/sdrx/dist" ]; then
+            echo "⚠️ SDRx dist found but expected sdrx/browser subfolder. Trying direct copy..."
+            cp -r apps/sdrx/dist/* ./deploy/sdrx/ 2>/dev/null || echo "✗ ERROR: SDRx deployment failed"
+          else
+            echo "✗ ERROR: apps/sdrx/dist not found"
+            exit 1
           fi
+          
+          echo ""
+          echo "Deploy directory structure:"
+          find deploy -type f -name "index.html" | head -10
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
