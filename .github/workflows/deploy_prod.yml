@@ -101,7 +101,7 @@ jobs:
           npm ls typescript --workspaces --depth=0
           npm run build:all
           echo "Build completed. Verifying dist folders..."
-          ls -la apps/landing-page/ | grep dist || echo "⚠️ WARNING: landing-page/dist not found"
+          ls -la dist/ 2>/dev/null | grep landing-page || echo "⚠️ WARNING: dist/landing-page not found"
           ls -la apps/roboarm/ | grep dist || echo "⚠️ WARNING: roboarm/dist not found"
           ls -la apps/wxstation/ | grep dist || echo "⚠️ WARNING: wxstation/dist not found"
           ls -la apps/sdrx/ | grep dist || echo "⚠️ WARNING: sdrx/dist not found"
@@ -110,12 +110,12 @@ jobs:
         run: |
           mkdir -p deploy/roboarm deploy/wxstation deploy/sdrx
           
-          # Deploy landing page to the root (with error handling)
-          if [ -d "apps/landing-page/dist" ]; then
-            cp -r apps/landing-page/dist/* ./deploy/
+          # Deploy landing page to the root (builds to ../../dist/landing-page from workspace)
+          if [ -d "dist/landing-page" ]; then
+            cp -r dist/landing-page/* ./deploy/
             echo "✓ Landing page deployed"
           else
-            echo "✗ ERROR: apps/landing-page/dist not found"
+            echo "✗ ERROR: dist/landing-page not found"
             exit 1
           fi
           
