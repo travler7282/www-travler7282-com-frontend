@@ -32,10 +32,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Resolve backend image version
-        id: backend_version
+      - name: Resolve sdrx image version
+        id: sdrx_version
         run: |
-            version=$(node -p "require('./backends/sdr-express-app/package.json').version")
+            version=$(node -p "require('./backends/sdrx/package.json').version")
             echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Resolve roboarm image version
@@ -45,30 +45,54 @@ jobs:
             import tomllib
             from pathlib import Path
 
-            pyproject = Path("backends/roboarm-fastapi-app/pyproject.toml")
+            pyproject = Path("backends/roboarm/pyproject.toml")
             data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
             print(data["project"]["version"])
             PY
             )
             echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Build and Push Backend Image (Prod)
+      - name: Resolve wxstation image version
+        id: wxstation_version
+        run: |
+            version=$(python3 - <<'PY'
+            import tomllib
+            from pathlib import Path
+
+            pyproject = Path("backends/wxstation/pyproject.toml")
+            data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+            print(data["project"]["version"])
+            PY
+            )
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build and Push SDRx Image (Prod)
         uses: docker/build-push-action@v6
         with:
-          context: backends/sdr-express-app
-          file: backends/sdr-express-app/Dockerfile
+          context: backends/sdrx
+          file: backends/sdrx/Dockerfile
           push: true
-          tags: docker.io/travler7282/sdr-express-app:${{ steps.backend_version.outputs.version }}
+          tags: docker.io/travler7282/sdrx:${{ steps.sdrx_version.outputs.version }}
 
       - name: Build and Push Roboarm Image (Prod)
         uses: docker/build-push-action@v6
         with:
-          context: backends/roboarm-fastapi-app
-          file: backends/roboarm-fastapi-app/Dockerfile
+          context: backends/roboarm
+          file: backends/roboarm/Dockerfile
           push: true
           tags: |
-            docker.io/travler7282/roboarm-fastapi-app:${{ steps.roboarm_version.outputs.version }}
-            docker.io/travler7282/roboarm-fastapi-app:${{ github.sha }}
+            docker.io/travler7282/roboarm:${{ steps.roboarm_version.outputs.version }}
+            docker.io/travler7282/roboarm:${{ github.sha }}
+
+      - name: Build and Push WXStation Image (Prod)
+        uses: docker/build-push-action@v6
+        with:
+          context: backends/wxstation
+          file: backends/wxstation/Dockerfile
+          push: true
+          tags: |
+            docker.io/travler7282/wxstation:${{ steps.wxstation_version.outputs.version }}
+            docker.io/travler7282/wxstation:${{ github.sha }}
 
       - name: Install and Build
         run: |
@@ -79,18 +103,18 @@ jobs:
 
       - name: Prepare Deployment Directory
         run: |
-          mkdir -p deploy/react deploy/vue deploy/angular
+          mkdir -p deploy/roboarm deploy/wxstation deploy/sdrx
           
           # Deploy landing page to the root
           cp -r apps/landing-page/dist/* ./deploy/
           
           # Deploy sub-apps to their respective routes
-          cp -r apps/react-app/dist/* ./deploy/react/
-          cp -r apps/vue-app/dist/* ./deploy/vue/
+          cp -r apps/roboarm/dist/* ./deploy/roboarm/
+          cp -r apps/wxstation/dist/* ./deploy/wxstation/
           
-          # Angular 17+ builds to a subfolder within dist
-          if [ -d "apps/angular-app/dist/angular-app/browser" ]; then
-            cp -r apps/angular-app/dist/angular-app/browser/. ./deploy/angular/
+          # Angular builds to a subfolder within dist
+          if [ -d "apps/sdrx/dist/sdrx/browser" ]; then
+            cp -r apps/sdrx/dist/sdrx/browser/. ./deploy/sdrx/
           fi
 
       - name: Configure AWS credentials

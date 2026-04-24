@@ -1,5 +1,5 @@
 [project]
-name = "roboarm-fastapi-app"
+name = "roboarm"
 version = "0.1.0"
 description = "RoboArm BLE controller backend"
 requires-python = ">=3.11"

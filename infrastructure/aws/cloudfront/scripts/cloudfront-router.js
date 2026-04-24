@@ -8,12 +8,12 @@ function handler(event) {
     }
 
     // 2. Logic for sub-app routing
-    if (uri.startsWith('/react')) {
-        request.uri = '/react/index.html';
-    } else if (uri.startsWith('/vue')) {
-        request.uri = '/vue/index.html';
-    } else if (uri.startsWith('/angular')) {
-        request.uri = '/angular/index.html';
+    if (uri.startsWith('/roboarm')) {
+        request.uri = '/roboarm/index.html';
+    } else if (uri.startsWith('/wxstation')) {
+        request.uri = '/wxstation/index.html';
+    } else if (uri.startsWith('/sdrx')) {
+        request.uri = '/sdrx/index.html';
     } else {
         // 3. Fallback for the main landing page
         request.uri = '/index.html';

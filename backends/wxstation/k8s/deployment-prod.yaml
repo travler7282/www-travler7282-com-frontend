@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wxstation
+  labels:
+    app: wxstation
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wxstation
+  template:
+    metadata:
+      labels:
+        app: wxstation
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: wxstation
+          image: docker.io/travler7282/wxstation:0.1.0
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          imagePullPolicy: Always
+          env:
+            - name: PORT
+              value: "8001"
+            - name: WXSTATION_CORS_ALLOWED_ORIGINS
+              value: https://travler7282.com,https://www.travler7282.com,https://api.travler7282.com
+          ports:
+            - containerPort: 8001
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 15
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wxstation
+spec:
+  selector:
+    app: wxstation
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8001
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wxstation
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - api.travler7282.com
+      secretName: wxstation-tls
+  rules:
+    - host: api.travler7282.com
+      http:
+        paths:
+          - path: /wxstation/api/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: wxstation
+                port:
+                  number: 80
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wxstation-tls
+spec:
+  secretName: wxstation-tls
+  dnsNames:
+    - api.travler7282.com
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-prod

@@ -24,10 +24,14 @@ This is needed since S3 buckets are used with CloudFront to serve static files.
 The backend for each app is hosted in my lab and runs on a Linux-based virtual
 machine, a K3s cluster, and containerized microservices for each backend. DNS
 is configured using AWS Route53, Let's Encrypt is used for TLS certificates, and
-the Traefik ingress controller is used to steer public ingress traffic to the 
+the Traefik ingress controller is used to steer public ingress traffic to the
 appropriate Kubernetes microservice. The entire setup demonstrates Engineering
 skills across a broad spectrum, including network, system, Cloud (DevOps),
 and software engineering using a variety of tech stacks, languages, and AWS services.
+
+- `backends/sdrx`: Node 24 + Express + TypeScript — SDRx control and telemetry API (port 8080)
+- `backends/roboarm`: Python 3.11 + FastAPI — RoboArm BLE controller with camera feed (port 8000)
+- `backends/wxstation`: Python 3.11 + FastAPI — WXStation weather data aggregator (port 8001, placeholder)
 
 ## Additional Cloud Information
 
@@ -58,9 +62,9 @@ some modification to the existing infrastructure scripts.
 ## Apps
 
 - `apps/landing-page`: Vite + TypeScript app (no UI framework). This is the main landing page and links to the framework-specific apps.
-- `apps/react-app`: React + TypeScript app built with Vite. **RoboArm** is a robotic arm controller that manages hardware in my lab, featuring a live camera feed. It includes a status indicator reflecting the arm's availability.
-- `apps/vue-app`: Vue 3 + TypeScript app built with Vite. **WXStation** is a weather monitor that aggregates real-time local sensor data from my lab with National Weather Service updates for a comprehensive display.
-- `apps/angular-app`: Angular app built with Angular CLI and Angular Material. **SDRx** is a Software Defined Radio (SDR) application that controls an RTL-SDR receiver. It supports demodulation for AM, FM, LSB, USB, DSB, WFM, and various digital modes (WIP).
+- `apps/roboarm`: React + TypeScript app built with Vite. **RoboArm** is a robotic arm controller that manages hardware in my lab, featuring a live camera feed. It includes a status indicator reflecting the arm's availability.
+- `apps/wxstation`: Vue 3 + TypeScript app built with Vite. **WXStation** is a weather monitor that aggregates real-time local sensor data from my lab with National Weather Service updates for a comprehensive display.
+- `apps/sdrx`: Angular app built with Angular CLI and Angular Material. **SDRx** is a Software Defined Radio (SDR) application that controls an RTL-SDR receiver. It supports demodulation for AM, FM, LSB, USB, DSB, WFM, and various digital modes (WIP).
 
 ## Environments and Branch Mapping
 
@@ -84,9 +88,15 @@ Run from repository root:
 
 ## Local Development
 
-Run an individual app from the root with npm workspaces:
+Run an individual frontend app from the root with npm workspaces:
 
-- Landing page: `npm run dev --workspace landing-page`
-- React app (RoboArm): `npm run dev --workspace react-app`
-- Vue app (WxStation): `npm run dev --workspace vue-app`
-- Angular app (SDRx): `npm run start --workspace angular-app`
+- Landing page: `npm run dev --workspace=landing-page`
+- RoboArm: `npm run dev --workspace=roboarm`
+- WXStation: `npm run dev --workspace=wxstation`
+- SDRx: `npm run start --workspace=sdrx`
+
+Run an individual backend:
+
+- SDRx backend: `npm run dev:sdrx`
+- RoboArm backend: `cd backends/roboarm && uvicorn main:app --reload --port 8000`
+- WXStation backend: `cd backends/wxstation && uvicorn main:app --reload --port 8001`

@@ -9,8 +9,10 @@
     "install:all": "npm install",
     "build:all": "npm run build --workspaces --if-present",
     "test:all": "npm run test --workspaces --if-present",
-    "dev:sdr-backend": "npm run dev --workspace sdr-express-app",
-    "build:sdr-backend": "npm run build --workspace sdr-express-app"
+    "dev:sdrx": "npm run dev --workspace=sdrx",
+    "build:sdrx": "npm run build --workspace=sdrx",
+    "dev:wxstation": "npm run dev --workspace=wxstation-backend",
+    "dev:roboarm": "npm run dev --workspace=roboarm-backend"
   },
   "overrides": {
     "typescript": "~5.8.3"

@@ -1,8 +1,8 @@
 {
-  "name": "sdr-express-app",
+  "name": "sdrx",
   "version": "0.1.0",
   "private": true,
-  "description": "Express backend API for SDR control and telemetry",
+  "description": "Express backend API for SDRx control and telemetry",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "engines": {

@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: roboarm-fastapi-app
+  name: roboarm
   labels:
-    app: roboarm-fastapi-app
+    app: roboarm
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: roboarm-fastapi-app
+      app: roboarm
   template:
     metadata:
       labels:
-        app: roboarm-fastapi-app
+        app: roboarm
     spec:
       securityContext:
         # Ensure the pod runs as the non-root user defined in the Dockerfile
@@ -30,8 +30,8 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: roboarm-fastapi-app
-          image: docker.io/travler7282/roboarm-fastapi-app:0.1.0
+        - name: roboarm
+          image: docker.io/travler7282/roboarm:0.1.0
           securityContext:
             privileged: true
             # Make the contain's own files unchangeable at runtime
@@ -94,10 +94,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: roboarm-fastapi-app
+  name: roboarm
 spec:
   selector:
-    app: roboarm-fastapi-app
+    app: roboarm
   ports:
     - name: http
       port: 80
@@ -107,7 +107,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: roboarm-fastapi-app
+  name: roboarm
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
@@ -117,7 +117,7 @@ spec:
   tls:
     - hosts:
         - api.travler7282.com
-      secretName: roboarm-fastapi-app-tls
+      secretName: roboarm-tls
   rules:
     - host: api.travler7282.com
       http:
@@ -126,16 +126,16 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: roboarm-fastapi-app
+                name: roboarm
                 port:
                   number: 80
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: roboarm-fastapi-app-tls
+  name: roboarm-tls
 spec:
-  secretName: roboarm-fastapi-app-tls
+  secretName: roboarm-tls
   dnsNames:
     - api.travler7282.com
   issuerRef:

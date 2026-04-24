@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sdr-express-app-dev
+  name: sdrx
   labels:
-    app: sdr-express-app-dev
+    app: sdrx
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sdr-express-app-dev
+      app: sdrx
   template:
     metadata:
       labels:
-        app: sdr-express-app-dev
+        app: sdrx
     spec:
       containers:
-        - name: sdr-express-app
-          image: docker.io/travler7282/sdr-express-app:0.1.0-dev
+        - name: sdrx
+          image: docker.io/travler7282/sdrx:0.1.0
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -50,10 +50,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sdr-express-app-dev
+  name: sdrx
 spec:
   selector:
-    app: sdr-express-app-dev
+    app: sdrx
   ports:
     - name: http
       port: 80
@@ -63,7 +63,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: sdr-express-app-dev
+  name: sdrx
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
@@ -72,28 +72,28 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - dev-api.travler7282.com
-      secretName: sdr-express-app-dev-tls
+        - api.travler7282.com
+      secretName: sdrx-tls
   rules:
-    - host: dev-api.travler7282.com
+    - host: api.travler7282.com
       http:
         paths:
           - path: /srdx/api/v1
             pathType: Prefix
             backend:
               service:
-                name: sdr-express-app-dev
+                name: sdrx
                 port:
                   number: 80
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: sdr-express-app-dev-tls
+  name: sdrx-tls
 spec:
-  secretName: sdr-express-app-dev-tls
+  secretName: sdrx-tls
   dnsNames:
-    - dev-api.travler7282.com
+    - api.travler7282.com
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt-prod

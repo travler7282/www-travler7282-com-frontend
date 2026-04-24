@@ -24,13 +24,14 @@ Owner: Michael Hunt (travler7282).
 ```
 apps/
   landing-page/   # Vite + TypeScript (no framework) — root of www.travler7282.com
-  react-app/      # React 19 + Vite — RoboArm robotic arm controller
-  vue-app/        # Vue 3 + Vite — WXStation weather monitor
-  angular-app/    # Angular 19 + Angular Material — SDRx software-defined radio (WIP)
+  roboarm/        # React 19 + Vite — RoboArm robotic arm controller
+  wxstation/      # Vue 3 + Vite — WXStation weather monitor
+  sdrx/           # Angular 19 + Angular Material — SDRx software-defined radio (WIP)
 
 backends/
-  sdr-express-app/        # Node 24 + Express + TypeScript — SDR control API
-  roboarm-fastapi-app/    # Python 3.11+ + FastAPI — RoboArm BLE controller
+  sdrx/       # Node 24 + Express + TypeScript — SDRx control API (port 8080)
+  roboarm/    # Python 3.11+ + FastAPI — RoboArm BLE controller (port 8000)
+  wxstation/  # Python 3.11+ + FastAPI — WXStation weather aggregator (port 8001, placeholder)
 
 infrastructure/
   aws/cloudfront/   # CloudFront distribution configs and routing function
@@ -61,11 +62,12 @@ via pull request.
 - **Runtime**: Node 24 (enforced via `.nvmrc`, `.node-version`, and `engines` in root `package.json`)
 - **Package manager**: npm workspaces (root `package.json` covers `apps/*` and `backends/*`)
 - **TypeScript**: `~5.8.3` pinned across all workspaces via root `overrides`
-- **Build tool**: Vite 8 (landing-page, react-app, vue-app); Angular CLI 19 (angular-app)
+- **Build tool**: Vite 8 (landing-page, roboarm, wxstation); Angular CLI 19 (sdrx)
 
 ### Backends
-- `sdr-express-app`: Node 24, Express 4, TypeScript, built with `tsc`
-- `roboarm-fastapi-app`: Python ≥3.11, FastAPI, versioned via `pyproject.toml`
+- `backends/sdrx`: Node 24, Express 4, TypeScript, built with `tsc`, port 8080
+- `backends/roboarm`: Python ≥3.11, FastAPI, BLE + camera, port 8000
+- `backends/wxstation`: Python ≥3.11, FastAPI, weather aggregator, port 8001 (placeholder)
 
 ### Infrastructure
 - AWS S3 + CloudFront (static hosting + CDN)
@@ -88,15 +90,16 @@ npm run build:all
 # Run all tests (workspaces that define a test script)
 npm run test:all
 
-# Dev servers — individual workspaces
-npm run dev --workspace landing-page
-npm run dev --workspace react-app
-npm run dev --workspace vue-app
-npm run start --workspace angular-app   # Angular uses `start`, not `dev`
+# Dev servers — frontend
+npm run dev --workspace=landing-page
+npm run dev --workspace=roboarm
+npm run dev --workspace=wxstation
+npm run start --workspace=sdrx        # Angular uses `start`, not `dev`
 
-# SDR backend
-npm run dev --workspace sdr-express-app
-npm run build --workspace sdr-express-app
+# Dev servers — backends
+npm run dev:sdrx                      # SDRx Express backend (port 8080)
+cd backends/roboarm && uvicorn main:app --reload --port 8000
+cd backends/wxstation && uvicorn main:app --reload --port 8001
 ```
 
 ---
@@ -129,9 +132,9 @@ Both workflows (`deploy_dev.yml`, `deploy_prod.yml`) follow the same steps:
 | App | Deploy path | URL |
 |---|---|---|
 | landing-page | `/` | www.travler7282.com |
-| react-app | `/react/` | www.travler7282.com/react/ |
-| vue-app | `/vue/` | www.travler7282.com/vue/ |
-| angular-app | `/angular/` | www.travler7282.com/angular/ |
+| roboarm | `/roboarm/` | www.travler7282.com/roboarm/ |
+| wxstation | `/wxstation/` | www.travler7282.com/wxstation/ |
+| sdrx | `/sdrx/` | www.travler7282.com/sdrx/ |
 
 CloudFront functions handle subdirectory routing so S3 serves the correct
 `index.html` for each SPA.
@@ -142,11 +145,11 @@ CloudFront functions handle subdirectory routing so S3 serves the correct
 
 - **TypeScript**: strict mode expected; `~5.8.3` pinned across all packages.
 - **No UI framework** on the landing page — plain TypeScript + Vite only.
-- **React app**: React 19, functional components, hooks only.
-- **Vue app**: Vue 3 Composition API.
-- **Angular app**: Angular 19, Angular Material, standalone components preferred.
-- **Backend (Express)**: `helmet` + `cors` + `morgan` middleware required on all routes.
-- **Backend (FastAPI)**: Python ≥3.11, type hints required.
+- **roboarm** (React): React 19, functional components, hooks only.
+- **wxstation** (Vue): Vue 3 Composition API.
+- **sdrx** (Angular): Angular 19, Angular Material, standalone components preferred.
+- **backends/sdrx** (Express): `helmet` + `cors` + `morgan` middleware required on all routes.
+- **backends/roboarm** and **backends/wxstation** (FastAPI): Python ≥3.11, type hints required.
 - Do not add new top-level dependencies without updating the relevant `package.json`
   or `pyproject.toml` and confirming Node/Python version compatibility.
 
@@ -195,5 +198,5 @@ asked, and must not assume any CI step deploys them.
 - Do not change the TypeScript version override in the root `package.json` without
   verifying compatibility across all four apps and both backends.
 - Do not add a UI framework to `apps/landing-page` — it is intentionally framework-free.
-- Do not delete or rename the `deploy/react/`, `deploy/vue/`, `deploy/angular/`
+- Do not delete or rename the `deploy/roboarm/`, `deploy/wxstation/`, `deploy/sdrx/`
   subdirectory structure — CloudFront routing depends on it.
