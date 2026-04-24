@@ -1,6 +1,12 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vite';
 
-// https://vite.dev/config/
 export default defineConfig({
-  base: '/', // Landing page deploys to the CloudFront root
-})
+  build: {
+    // Target directory for monorepo-wide build aggregation
+    outDir: '../../dist/landing-page',
+    emptyOutDir: true,
+  },
+  server: {
+    port: 5173,
+  },
+});
