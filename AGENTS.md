@@ -97,7 +97,7 @@ npm run dev --workspace=wxstation
 npm run start --workspace=sdrx        # Angular uses `start`, not `dev`
 
 # Dev servers — backends
-npm run dev:sdrx                      # SDRx Express backend (port 8080)
+npm run dev:sdrx                      # SDRx Express backend (port 8080, workspace: sdrx-backend)
 cd backends/roboarm && uvicorn main:app --reload --port 8000
 cd backends/wxstation && uvicorn main:app --reload --port 8001
 ```

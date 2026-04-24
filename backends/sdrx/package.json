@@ -1,5 +1,5 @@
 {
-  "name": "sdrx",
+  "name": "sdrx-backend",
   "version": "0.1.0",
   "private": true,
   "description": "Express backend API for SDRx control and telemetry",
