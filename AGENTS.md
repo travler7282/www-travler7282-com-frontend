@@ -171,8 +171,9 @@ Agents follow the same flow as human contributors:
 5. The owner reviews, merges to `dev` → CI deploys to dev.travler7282.com.
 6. The owner opens a PR from `dev` → `main` when satisfied → CI deploys to prod.
 
-**Label prerequisite:** The `ai-generated` label must exist in the GitHub repo.
-Create it once at: Settings → Labels → New label → name `ai-generated`.
+**Label:** `ai-generated` already exists in the repo. Apply it to PRs via
+`github_update_pull_request` after creation. Issues cannot be labeled via the
+integration token (403) — apply the label manually on the issue in GitHub.
 
 Agents must never commit directly to `main` or `dev`.
 
