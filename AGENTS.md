@@ -114,9 +114,9 @@ Both workflows (`deploy_dev.yml`, `deploy_prod.yml`) follow the same steps:
 3. `npm install && npm run build:all` — builds all frontend apps.
 4. Assemble a `deploy/` directory:
    - Landing page → `deploy/` (root)
-   - React app → `deploy/react/`
-   - Vue app → `deploy/vue/`
-   - Angular app → `deploy/angular/`
+   - RoboArm → `deploy/roboarm/`
+   - WXStation → `deploy/wxstation/`
+   - SDRx → `deploy/sdrx/`
 5. Sync `deploy/` to the appropriate S3 bucket.
 6. Invalidate the CloudFront distribution cache.
 

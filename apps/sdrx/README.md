@@ -1,4 +1,4 @@
-# angular-app
+# SDRx
 
 Angular application for the monorepo.
 
@@ -9,13 +9,13 @@ Angular application for the monorepo.
 - `npm run watch` - build in watch mode
 - `npm run test` - run unit tests
 
-This app is deployed under the `/angular/` route by the repository deployment workflows.
+This app is deployed under the `/sdrx/` route by the repository deployment workflows.
 
 ## Backend Domain Configuration
 
 The SDR backend URL is runtime-configured (no hardcoded domain in Angular code).
 
-Set the API domain in [apps/angular-app/public/runtime-config.js](apps/angular-app/public/runtime-config.js):
+Set the API domain in [apps/sdrx/public/runtime-config.js](apps/sdrx/public/runtime-config.js):
 
 ```js
 window.__SDR_CONFIG__ = {

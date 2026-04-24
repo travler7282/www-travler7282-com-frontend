@@ -1,4 +1,4 @@
-# react-app
+# RoboArm
 
 React + TypeScript application built with Vite.
 
@@ -9,4 +9,4 @@ React + TypeScript application built with Vite.
 - `npm run preview` - preview production build locally
 - `npm run lint` - run ESLint
 
-This app is deployed under the `/react/` route by the repository deployment workflows.
+This app is deployed under the `/roboarm/` route by the repository deployment workflows.
