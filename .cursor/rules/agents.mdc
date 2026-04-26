@@ -1,0 +1,6 @@
+# Cursor Adapter Rule
+
+Canonical project instructions are in [AGENTS.md](../../AGENTS.md).
+
+This file is a thin compatibility adapter only. Follow `AGENTS.md` for all
+repository policy and workflow requirements.

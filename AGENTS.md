@@ -13,7 +13,7 @@ Owner: Michael Hunt (travler7282).
 | Layer | Location | Description |
 |---|---|---|
 | Frontend apps | `apps/` | Four Vite/TypeScript SPAs |
-| Backend services | `backends/` | Node/Express (SDR) + Python/FastAPI (RoboArm) |
+| Backend services | `backends/` | Node/Express (SDRx) + Python/FastAPI (RoboArm, WXStation, DevOps Assistant) |
 | Infrastructure | `infrastructure/` | AWS CloudFront configs + K8s manifests |
 | CI/CD | `.github/workflows/` | GitHub Actions deploy to dev and prod |
 
@@ -32,6 +32,7 @@ backends/
   sdrx/       # Node 24 + Express + TypeScript — SDRx control API (port 8080)
   roboarm/    # Python 3.11+ + FastAPI — RoboArm BLE controller (port 8000)
   wxstation/  # Python 3.11+ + FastAPI — WXStation weather aggregator (port 8001, placeholder)
+  devops-assistant/  # Python 3.11+ + FastAPI — DevOps Assistant API (K8s routed via /devops-assistant/api/v1)
 
 infrastructure/
   aws/cloudfront/   # CloudFront distribution configs and routing function
@@ -68,6 +69,7 @@ via pull request.
 - `backends/sdrx`: Node 24, Express 4, TypeScript, built with `tsc`, port 8080
 - `backends/roboarm`: Python ≥3.11, FastAPI, BLE + camera, port 8000
 - `backends/wxstation`: Python ≥3.11, FastAPI, weather aggregator, port 8001 (placeholder)
+- `backends/devops-assistant`: Python ≥3.11, FastAPI, log ingestion + RAG query service, K8s ingress path prefix `/devops-assistant/api/v1`
 
 ### Infrastructure
 - AWS S3 + CloudFront (static hosting + CDN)
@@ -100,6 +102,7 @@ npm run start --workspace=sdrx        # Angular uses `start`, not `dev`
 npm run dev:sdrx                      # SDRx Express backend (port 8080, workspace: sdrx-backend)
 cd backends/roboarm && uvicorn main:app --reload --port 8000
 cd backends/wxstation && uvicorn main:app --reload --port 8001
+cd backends/devops-assistant && uvicorn main:app --reload --port 8002   # use 8002 locally to avoid roboarm port collision
 ```
 
 ---
@@ -108,10 +111,10 @@ cd backends/wxstation && uvicorn main:app --reload --port 8001
 
 Both workflows (`deploy_dev.yml`, `deploy_prod.yml`) follow the same steps:
 
-1. Resolve backend image versions from `package.json` (sdr-express-app) and
-   `pyproject.toml` (roboarm-fastapi-app).
+1. Resolve backend image versions from `backends/sdrx/package.json` and
+  `pyproject.toml` files for `roboarm`, `wxstation`, and `devops-assistant`.
 2. Build and push Docker images to Docker Hub with environment-tagged versions.
-3. `npm install && npm run build:all` — builds all frontend apps.
+3. `npm ci --include=optional && npm run build:all` — builds all frontend apps.
 4. Assemble a `deploy/` directory:
    - Landing page → `deploy/` (root)
    - RoboArm → `deploy/roboarm/`
@@ -178,6 +181,14 @@ Agents follow the same flow as human contributors:
 `github_update_pull_request` after creation. Issues cannot be labeled via the
 integration token (403) — apply the label manually on the issue in GitHub.
 
+**Issue description format (required):**
+The first sentence of every issue description MUST use this user-story format:
+
+`As a <role>, I want to <capability>, so that <benefit>.`
+
+After that first sentence, include supporting sections such as scope,
+acceptance criteria, implementation notes, and references.
+
 Agents must never commit directly to `main` or `dev`.
 
 ---
@@ -187,6 +198,75 @@ Agents must never commit directly to `main` or `dev`.
 The K8s manifests in `backends/*/k8s/` and `infrastructure/k8s/` are applied
 **manually** by the owner. Agents must not modify these files unless explicitly
 asked, and must not assume any CI step deploys them.
+
+### Live Ops Guardrails
+
+When troubleshooting deployments, agents MUST separate local repository edits
+from live runtime changes and report both explicitly.
+
+1. **Label scope clearly in every status update**
+  - Local changes: file edits in this repository.
+  - Remote changes: live cluster patches/applies via SSH + `kubectl`.
+  - Always state whether local changes are committed.
+
+2. **Use this rollout triage order (do not skip steps)**
+  - `kubectl rollout status <resource>`
+  - `kubectl get pods -o wide`
+  - `kubectl describe pod <failing-pod>`
+  - `kubectl logs --previous <failing-pod>`
+  - `kubectl get deployment <name> -o yaml` to confirm effective probe paths
+
+3. **DevOps Assistant path alignment rule (required)**
+  - Ingress routes traffic under `/devops-assistant/api/v1`.
+  - FastAPI routes and OpenAPI/docs are expected under the same prefix.
+  - Readiness/liveness probes must target valid prefixed routes for the active image.
+
+4. **Secret handling policy (hard requirement)**
+  - Never print, echo, or commit secret values.
+  - Allowed alternatives: rotate temporary test keys, run behavior-based auth checks,
+    and provide user-run retrieval commands without posting values into chat.
+
+### Multi-Agent Instruction Strategy
+
+Use `AGENTS.md` as the single source of truth for shared repository guidance.
+
+1. **Default approach**
+  - Keep all shared rules in `AGENTS.md`.
+  - Avoid duplicating the same policy text across tool-specific files.
+
+2. **When to add tool-specific adapter files**
+  - Add an adapter only when a tool cannot reliably consume `AGENTS.md`.
+  - Keep adapter files thin and reference `AGENTS.md` as canonical guidance.
+
+3. **Recommended adapter set (only if needed)**
+  - `copilot-instructions.md`: brief pointer to `AGENTS.md` plus Copilot-only notes.
+  - `.cursor/rules/*.mdc`: short compatibility rules that mirror `AGENTS.md` intent.
+  - `.claude/` instruction files: minimal wrappers, no policy forks.
+
+4. **Change control rule**
+  - Update `AGENTS.md` first.
+  - Then update any adapters in the same commit to prevent instruction drift.
+
+### Backend Versioning Policy
+
+Backend service versions MUST follow semantic versioning and be updated in the
+service manifest file before release builds.
+
+1. **Where to bump versions**
+  - `backends/sdrx/package.json`
+  - `backends/roboarm/pyproject.toml`
+  - `backends/wxstation/pyproject.toml`
+  - `backends/devops-assistant/pyproject.toml`
+
+2. **When to bump**
+  - Patch (`x.y.Z`): bug fixes, probe/path fixes, docs-only API behavior stability.
+  - Minor (`x.Y.z`): new endpoints, backward-compatible features, non-breaking config additions.
+  - Major (`X.y.z`): breaking API contract changes, removed endpoints, incompatible payload changes.
+
+3. **Release tagging expectations**
+  - Dev workflow appends `-dev` tags from the resolved service version.
+  - Prod workflow publishes the plain resolved service version.
+  - Do not merge release-impacting backend changes without an intentional version bump.
 
 ---
 

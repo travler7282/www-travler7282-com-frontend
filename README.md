@@ -78,6 +78,16 @@ some modification to the existing infrastructure scripts.
 	- GitHub branch: `main`
 	- Workflow: `.github/workflows/deploy_prod.yml`
 
+### Backend Image Publishing in CI
+
+The deployment workflows now publish backend Docker images for SDRx, RoboArm,
+WXStation, and DevOps Assistant.
+
+- Push/merge to `dev` runs `.github/workflows/deploy_dev.yml` and publishes
+  `*-dev` tags.
+- Push/merge to `main` runs `.github/workflows/deploy_prod.yml` and publishes
+  production version tags.
+
 ## Workspace Scripts
 
 Run from repository root:
@@ -100,3 +110,66 @@ Run an individual backend:
 - SDRx backend: `npm run dev:sdrx`
 - RoboArm backend: `cd backends/roboarm && uvicorn main:app --reload --port 8000`
 - WXStation backend: `cd backends/wxstation && uvicorn main:app --reload --port 8001`
+- DevOps Assistant backend: `cd backends/devops-assistant && uvicorn main:app --reload --port 8002`
+
+## Local Port Mapping
+
+### Frontend Dev Servers
+
+| App | Workspace command | Port |
+|---|---|---|
+| landing-page | `npm run dev --workspace=landing-page` | 5173 |
+| roboarm | `npm run dev --workspace=roboarm` | 5174 |
+| wxstation | `npm run dev --workspace=wxstation` | 5175 |
+| sdrx | `npm run start --workspace=sdrx` | 4200 |
+
+### Backend Dev Servers
+
+| Service | Run command | Port |
+|---|---|---|
+| sdrx | `npm run dev:sdrx` | 8080 |
+| roboarm | `cd backends/roboarm && uvicorn main:app --reload --port 8000` | 8000 |
+| wxstation | `cd backends/wxstation && uvicorn main:app --reload --port 8001` | 8001 |
+| devops-assistant | `cd backends/devops-assistant && uvicorn main:app --reload --port 8002` | 8002 |
+
+`devops-assistant` is intentionally set to `8002` for local runs so it does not
+conflict with `roboarm` on `8000`.
+
+## DevOps Assistant Kubernetes Secrets
+
+The `backends/devops-assistant/k8s/deployment-dev.yaml` and
+`backends/devops-assistant/k8s/deployment-prod.yaml` manifests reference
+environment-specific Kubernetes secrets:
+
+- `ai-devops-secrets-dev`
+- `ai-devops-secrets-prod`
+
+These commands assume the `default` namespace. If you move later, append
+`-n <namespace>` to each `kubectl` command.
+
+Create them before applying deployments.
+
+### Development
+
+```bash
+kubectl create secret generic ai-devops-secrets-dev \
+	--from-literal=OPENAI_API_KEY='<your-dev-openai-key>' \
+	--from-literal=APP_API_KEY='<your-dev-app-api-key>'
+```
+
+### Production
+
+```bash
+kubectl create secret generic ai-devops-secrets-prod \
+	--from-literal=OPENAI_API_KEY='<your-prod-openai-key>' \
+	--from-literal=APP_API_KEY='<your-prod-app-api-key>'
+```
+
+If the secrets already exist, update them with:
+
+```bash
+kubectl delete secret ai-devops-secrets-dev
+kubectl delete secret ai-devops-secrets-prod
+```
+
+Then re-run the `kubectl create secret` commands above.
