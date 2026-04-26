@@ -114,7 +114,7 @@ const App: React.FC = () => {
   const [backendPreset, setBackendPreset] = useState<BackendPreset>('custom');
   const [backendBaseUrl, setBackendBaseUrl] = useState<string>(envDefault);
   const [customBackendUrl, setCustomBackendUrl] = useState<string>(envDefault);
-  const [cameraTick, setCameraTick] = useState<number>(Date.now());
+  const [cameraTick, setCameraTick] = useState<number>(0);
   const [cameraError, setCameraError] = useState<boolean>(false);
 
   const presetUrlMap = useMemo(
@@ -450,14 +450,17 @@ const App: React.FC = () => {
   }, [isSyncing]);
 
   useEffect(() => {
-    connectSocket();
-    void scanDevices();
+    const startupTimer = window.setTimeout(() => {
+      connectSocket();
+      void scanDevices();
+    }, 0);
 
     const interval = window.setInterval(() => {
       setCameraTick(Date.now());
     }, 250);
 
     return () => {
+      window.clearTimeout(startupTimer);
       window.clearInterval(interval);
       if (wsRef.current) {
         wsRef.current.close();
