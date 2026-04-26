@@ -31,11 +31,11 @@ pip install -r requirements.txt
 
 ### Run this backend in your terminal
 ```
-uvicorn main:app --host 0.0.0.0 --port 8000 --proxy-headers
+uvicorn main:app --host 0.0.0.0 --port 8002 --proxy-headers
 ```
 
 ## API Documentation
-http://localhost:8000/docs (replace localhost with your hostname if hosted on a different server)
+http://localhost:8002/devops-assistant/api/v1/docs (replace localhost with your hostname if hosted on a different server)
 
 ## Kubernetes Secret Setup (Dev and Prod)
 

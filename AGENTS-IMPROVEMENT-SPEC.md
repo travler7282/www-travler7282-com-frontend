@@ -2,6 +2,7 @@
 
 Audit of agent-guidance quality for `www-travler7282-com`.
 Date: 2026-04-24
+Last updated: 2026-04-26
 
 ---
 
@@ -11,14 +12,54 @@ Date: 2026-04-24
 
 | Artifact | Status |
 |---|---|
-| `AGENTS.md` | ❌ Missing — created in this session |
+| `AGENTS.md` | ✅ Present |
 | `.ona/skills/` | ❌ Not present |
 | `.cursor/rules/` | ❌ Not present |
 | `README.md` | ✅ Exists, reasonably detailed |
-| `.devcontainer/devcontainer.json` | ⚠️ Exists but minimal |
+| `.devcontainer/devcontainer.json` | ✅ Exists with Node 24 image, Python feature, post-create install, and forwarded ports |
 
-No agent-specific guidance existed before this session. The `README.md` is the
-only source of project context, but it is written for human readers, not agents.
+Agent-specific guidance now exists and should be treated as the canonical source
+for repository conventions (`AGENTS.md` first, then `README.md` for user-facing context).
+
+---
+
+## Completed Since Initial Audit
+
+1. Added `AGENTS.md` with repository structure, workflow, and constraints.
+2. Hardened `.devcontainer/devcontainer.json` (Node 24 image + Python feature,
+   `postCreateCommand`, and explicit port forwarding).
+3. Fixed workspace command examples to use `--workspace=<name>` syntax.
+4. Expanded `.gitignore` to include `/deploy/`, Python artifacts, editor files,
+   and logs.
+5. Added `apps/landing-page/vite.config.ts` for configuration consistency.
+6. Added explicit live-ops runbook guardrails to `AGENTS.md`.
+7. Completed P0: switched CI to reproducible `npm ci` installs and removed
+   lockfile deletion from workflows.
+8. Completed P0: added explicit local port mapping to `README.md` and resolved
+   local `roboarm`/`devops-assistant` port conflict by assigning `8002` to
+   `devops-assistant` local runs.
+9. Completed P1: added `apps/landing-page/eslint.config.js`.
+10. Completed P1: added frontend smoke tests for `landing-page`, `roboarm`, and
+    `wxstation` and wired test scripts.
+11. Completed P1: added thin adapter instruction files for Copilot, Claude,
+    and Cursor that reference `AGENTS.md`.
+12. Completed P2: `.env.example`, `.github/pull_request_template.md`, and
+   `.github/CODEOWNERS` are present and aligned with current workflow.
+13. Completed P3: added backend semantic versioning policy to `AGENTS.md`.
+
+---
+
+## Multi-Agent File Recommendation
+
+Use `AGENTS.md` as the canonical instruction source for this repository.
+
+Do **not** create full duplicate instruction files per tool by default.
+Create thin adapter files only when a specific tool needs a native format/path.
+
+Recommended pattern:
+1. Maintain policy and workflow rules in `AGENTS.md`.
+2. If needed, add minimal adapters (Copilot/Cursor/Claude) that point back to `AGENTS.md`.
+3. Update canonical + adapters in the same commit to avoid drift.
 
 ---
 
@@ -42,80 +83,21 @@ only source of project context, but it is written for human readers, not agents.
 
 ---
 
-## What's Missing
+## Remaining Gaps
 
-### 1. No `AGENTS.md` (fixed in this session)
-Agents had no structured entry point. They would have to infer everything from
-`README.md`, which omits conventions, constraints, and agent-specific warnings.
+### 1. Adapter files are not yet validated in real multi-agent runs
+Thin adapters are now in place, but should be validated with active Cursor,
+Claude, and Copilot sessions to confirm they are loaded as expected.
 
-### 2. No devcontainer automations
-`devcontainer.json` uses the 10 GB universal image with no `postCreateCommand`,
-no `forwardPorts`, and no `customizations`. Agents starting a dev session have
-no automated setup — they must manually run `npm install` and figure out which
-port each app uses.
-
-### 3. No per-app port documentation
-The Vite default ports (5173, 5174, etc.) and Angular's default (4200) are not
-documented anywhere. An agent running a dev server cannot tell the user the
-correct preview URL without guessing.
-
-### 4. No linting or formatting config on landing-page
-`apps/landing-page` has no ESLint config (unlike `react-app`). An agent editing
-landing-page code has no linting baseline to follow or verify against.
-
-### 5. No test coverage on frontend apps
-Only `angular-app` has a test script (`ng test`). The other three apps have no
-tests. An agent cannot verify frontend changes beyond "it builds."
-
-### 6. No `CODEOWNERS` or PR template
-No `.github/CODEOWNERS` or `.github/pull_request_template.md`. Agents creating
-PRs have no guidance on required reviewers or PR description format.
-
-### 7. Backend versioning is manual and undocumented
-Both backends are at `0.1.0` with no changelog or versioning policy. An agent
-bumping a version has no guidance on when/how to do so, or whether semver is
-expected.
-
-### 8. `.gitignore` is Angular-centric
-The root `.gitignore` was clearly generated for Angular. It is missing common
-patterns for Python (`__pycache__/`, `*.pyc`, `.venv/`), general Node artifacts
-(`*.log`), and editor files (`.vscode/`, `.DS_Store`).
-
-### 9. No environment variable documentation
-The workflows reference 9 GitHub Secrets. There is no `.env.example` or
-documentation listing what each secret is for, making it impossible for an agent
-(or new contributor) to set up a local or fork environment.
+### 2. No frontend exists for `devops-assistant` backend
+The backend API exists, but there is no dedicated frontend workspace to provide
+an interactive UI for log ingestion, query prompts, and response display.
 
 ---
 
 ## What's Wrong
 
-### 1. `deploy/` directory is not in `.gitignore`
-The CI pipeline creates a `deploy/` directory at the repo root during build.
-If an agent runs the build locally, `deploy/` will appear as untracked files.
-It is not excluded by `.gitignore`.
-
-### 2. `package-lock.json` is deleted in CI (`rm -f package-lock.json`)
-Both workflows delete `package-lock.json` before `npm install`. This means
-installs are not reproducible — any dependency with a loose version range can
-silently upgrade between runs. An agent following the workflow locally will
-produce a different lockfile than CI.
-
-### 3. `devcontainer.json` uses the 10 GB universal image with no justification
-The comment in `devcontainer.json` itself flags this as a problem ("For faster
-startup, consider a smaller image"). For a Node 24 + Python 3.11 project, the
-universal image is unnecessary. This slows every agent environment start.
-
-### 4. `apps/landing-page` has no `vite.config.ts`
-The other Vite apps all have `vite.config.ts`. The landing page relies on Vite
-defaults. An agent adding a plugin or changing the base path has no config file
-to edit and may create one inconsistently.
-
-### 5. `README.md` workspace dev command for Angular is wrong
-`README.md` says: `npm run start --workspace angular-app`
-The correct npm workspaces syntax is: `npm run start --workspace=angular-app`
-(with `=`). The `--workspace` flag without `=` is interpreted differently by
-some npm versions and may silently fail.
+No open correctness issues remain from the original P0-P3 scope.
 
 ---
 
@@ -125,161 +107,45 @@ The following changes are prioritized by impact on agent reliability.
 
 ---
 
-### P0 — Correctness fixes (do these first)
+### P0 — Correctness fixes
 
-#### Fix `.gitignore`
-Add the following to the root `.gitignore`:
-
-```
-# Build output (generated by CI and local builds)
-/deploy/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-.venv/
-venv/
-
-# Editor / OS
-.vscode/
-.idea/
-.DS_Store
-*.swp
-
-# Logs
-*.log
-npm-debug.log*
-```
-
-#### Fix `README.md` Angular dev command
-Change:
-```
-npm run start --workspace angular-app
-```
-To:
-```
-npm run start --workspace=angular-app
-```
-Apply the same `=` fix to all other `--workspace` examples in `README.md`.
+P0 items are complete.
 
 ---
 
 ### P1 — Agent reliability (high value, low effort)
 
-#### Add `postCreateCommand` to `devcontainer.json`
-```json
-{
-  "postCreateCommand": "npm install"
-}
-```
-This ensures dependencies are installed automatically when an agent environment
-starts, without requiring a manual step.
-
-#### Add `forwardPorts` to `devcontainer.json`
-```json
-{
-  "forwardPorts": [4200, 5173, 5174, 5175, 3000]
-}
-```
-Documents and pre-opens the ports used by each app so agents can provide correct
-preview URLs.
-
-#### Switch `devcontainer.json` to a Node-specific image
-Replace the 10 GB universal image with:
-```json
-{
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:24"
-}
-```
-Add a feature for Python since `roboarm-fastapi-app` requires it:
-```json
-{
-  "features": {
-    "ghcr.io/devcontainers/features/python:1": { "version": "3.11" }
-  }
-}
-```
-
-#### Add `apps/landing-page/vite.config.ts`
-Create a minimal config to give agents a consistent file to edit:
-```typescript
-import { defineConfig } from 'vite'
-
-export default defineConfig({
-  // base: '/' — set to '/subpath/' if deploying under a subdirectory
-})
-```
+P1 items are complete.
 
 ---
 
 ### P2 — Agent guidance (medium value, medium effort)
 
-#### Add `.env.example`
-Create a root-level `.env.example` documenting every GitHub Secret used in CI:
-```
-# AWS
-AWS_REGION=us-east-1
-AWS_DEV_ROLE_ARN=arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME
-AWS_PROD_ROLE_ARN=arn:aws:iam::ACCOUNT_ID:role/ROLE_NAME
-AWS_DEV_BUCKET_NAME=your-dev-bucket
-AWS_PROD_BUCKET_NAME=your-prod-bucket
-AWS_DEV_CLOUDFRONT_ID=DISTRIBUTION_ID
-AWS_PROD_CLOUDFRONT_ID=DISTRIBUTION_ID
+P2 items are complete.
 
-# Docker Hub
-DOCKERHUB_USERNAME=your-dockerhub-username
-DOCKERHUB_TOKEN=your-token
-```
+---
 
-#### Add `.github/pull_request_template.md`
-```markdown
-## Summary
-<!-- What changed and why -->
+### P2.5 - Operational guardrails (added 2026-04-26)
 
-## Type
-- [ ] Feature
-- [ ] Bug fix
-- [ ] Infrastructure / CI
-- [ ] Docs
-
-## Testing
-<!-- How was this verified? -->
-
-## Checklist
-- [ ] Tested locally against dev environment
-- [ ] No secrets committed
-- [ ] `npm run build:all` passes
-```
-
-#### Add ESLint config to `apps/landing-page`
-Copy the pattern from `apps/react-app/eslint.config.js`, removing React-specific
-plugins. This gives agents a linting baseline for landing-page edits.
+Implemented in `AGENTS.md` (local-vs-remote scope labeling, rollout triage
+order, devops-assistant path/probe alignment, and secret-handling examples).
 
 ---
 
 ### P3 — Long-term quality (lower urgency)
 
-#### Restore `package-lock.json` to CI
-Remove `rm -f package-lock.json` from both workflows. Commit a valid
-`package-lock.json` to the repo root. Use `npm ci` instead of `npm install` in
-CI for reproducible installs.
+P3 items are complete.
 
-#### Add a versioning policy to `AGENTS.md`
-Document when and how to bump backend versions (e.g., semver patch for bug
-fixes, minor for new endpoints) so agents don't make arbitrary version changes.
+---
 
-#### Add frontend smoke tests
-Add at minimum a build-verification test to `landing-page`, `react-app`, and
-`vue-app` (e.g., Vitest with a single render test). This gives agents a
-verification step beyond "it builds."
+### P0 — Product expansion (new work)
 
-#### Add `CODEOWNERS`
-```
-# .github/CODEOWNERS
-* @travler7282
-```
-Ensures PRs always request review from the owner, even when created by an agent.
+#### Create a frontend app for `devops-assistant`
+Add a new workspace under `apps/devops-assistant` (Vite + TypeScript) with:
+1. API base URL configuration for dev/prod environments
+2. Auth header input for `APP_API_KEY` testing
+3. UI flows for submit logs, ask questions, and clear logs
+4. Basic smoke tests and build integration in workspace scripts
 
 ---
 
@@ -287,15 +153,5 @@ Ensures PRs always request review from the owner, even when created by an agent.
 
 | Priority | Item | Effort |
 |---|---|---|
-| P0 | Fix `.gitignore` (add `deploy/`, Python, editor patterns) | 5 min |
-| P0 | Fix `README.md` `--workspace` syntax | 2 min |
-| P1 | `devcontainer.json`: add `postCreateCommand`, `forwardPorts` | 10 min |
-| P1 | `devcontainer.json`: switch to Node image + Python feature | 15 min |
-| P1 | Add `apps/landing-page/vite.config.ts` | 5 min |
-| P2 | Add `.env.example` | 10 min |
-| P2 | Add `.github/pull_request_template.md` | 10 min |
-| P2 | Add ESLint to `apps/landing-page` | 20 min |
-| P3 | Restore `package-lock.json` and use `npm ci` in CI | 30 min |
-| P3 | Add versioning policy to `AGENTS.md` | 10 min |
-| P3 | Add frontend smoke tests | 60 min |
-| P3 | Add `CODEOWNERS` | 2 min |
+| P0 | Create frontend app for `devops-assistant` backend | 3-5 hours |
+| P2 | Validate adapter loading in Cursor/Claude/Copilot sessions | 15 min |

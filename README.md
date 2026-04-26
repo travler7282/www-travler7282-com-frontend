@@ -110,6 +110,30 @@ Run an individual backend:
 - SDRx backend: `npm run dev:sdrx`
 - RoboArm backend: `cd backends/roboarm && uvicorn main:app --reload --port 8000`
 - WXStation backend: `cd backends/wxstation && uvicorn main:app --reload --port 8001`
+- DevOps Assistant backend: `cd backends/devops-assistant && uvicorn main:app --reload --port 8002`
+
+## Local Port Mapping
+
+### Frontend Dev Servers
+
+| App | Workspace command | Port |
+|---|---|---|
+| landing-page | `npm run dev --workspace=landing-page` | 5173 |
+| roboarm | `npm run dev --workspace=roboarm` | 5174 |
+| wxstation | `npm run dev --workspace=wxstation` | 5175 |
+| sdrx | `npm run start --workspace=sdrx` | 4200 |
+
+### Backend Dev Servers
+
+| Service | Run command | Port |
+|---|---|---|
+| sdrx | `npm run dev:sdrx` | 8080 |
+| roboarm | `cd backends/roboarm && uvicorn main:app --reload --port 8000` | 8000 |
+| wxstation | `cd backends/wxstation && uvicorn main:app --reload --port 8001` | 8001 |
+| devops-assistant | `cd backends/devops-assistant && uvicorn main:app --reload --port 8002` | 8002 |
+
+`devops-assistant` is intentionally set to `8002` for local runs so it does not
+conflict with `roboarm` on `8000`.
 
 ## DevOps Assistant Kubernetes Secrets
 
