@@ -66,6 +66,20 @@ jobs:
             )
             echo "version=$version" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve devops-assistant image version
+        id: devops_assistant_version
+        run: |
+            version=$(python3 - <<'PY'
+            import tomllib
+            from pathlib import Path
+
+            pyproject = Path("backends/devops-assistant/pyproject.toml")
+            data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+            print(data["project"]["version"])
+            PY
+            )
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Build and Push SDRx Image (Dev)
         uses: docker/build-push-action@v6
         with:
@@ -93,6 +107,16 @@ jobs:
           tags: |
             docker.io/travler7282/wxstation:${{ steps.wxstation_version.outputs.version }}-dev
             docker.io/travler7282/wxstation:${{ github.sha }}-dev
+
+      - name: Build and Push DevOps Assistant Image (Dev)
+        uses: docker/build-push-action@v6
+        with:
+          context: backends/devops-assistant
+          file: backends/devops-assistant/Dockerfile
+          push: true
+          tags: |
+            docker.io/travler7282/devops-assistant:${{ steps.devops_assistant_version.outputs.version }}-dev
+            docker.io/travler7282/devops-assistant:${{ github.sha }}-dev
 
       - name: Install and Build
         run: |

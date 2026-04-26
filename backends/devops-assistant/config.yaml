@@ -1,0 +1,20 @@
+app:
+  name: ai-devops-assistant
+  max_log_size: 100000
+
+security:
+  require_api_key: true
+
+rate_limit:
+  enabled: true
+  requests: 10
+  window_seconds: 60
+
+rag:
+  persist_dir: /data/chroma_db
+  collection_name: logs
+
+retention:
+  enabled: true
+  max_age_seconds: 86400   # 24 hours
+  cleanup_interval_seconds: 300  # every 5 minutes
