@@ -1,5 +1,5 @@
 # This Dockerfile sets up a FastAPI application with LangChain and ChromaDB for vector storage.
-FROM python:3.14-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
