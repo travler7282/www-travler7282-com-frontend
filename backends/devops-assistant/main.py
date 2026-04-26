@@ -17,11 +17,27 @@ from llm import ask_llm
 from security import verify_api_key
 from rate_limiter import rate_limit
 
-app = FastAPI()
+API_PREFIX = "/devops-assistant/api/v1"
+
+app = FastAPI(
+    openapi_url=f"{API_PREFIX}/openapi.json",
+    docs_url=f"{API_PREFIX}/docs",
+    redoc_url=f"{API_PREFIX}/redoc",
+)
 
 db = get_db()
 
-@app.post("/logs")
+
+@app.get(f"{API_PREFIX}/healthz")
+def healthz():
+    return {"status": "ok"}
+
+
+@app.get(f"{API_PREFIX}/readyz")
+def readyz():
+    return {"status": "ready"}
+
+@app.post(f"{API_PREFIX}/logs")
 async def add_logs(
     request: Request,
     _: bool = Depends(verify_api_key),
@@ -38,7 +54,7 @@ async def add_logs(
 
     return {"added": added}
 
-@app.get("/ask")
+@app.get(f"{API_PREFIX}/ask")
 def ask(
     question: str,
     request: Request,
@@ -58,7 +74,7 @@ def ask(
 
     return {"answer": answer}
 
-@app.delete("/logs")
+@app.delete(f"{API_PREFIX}/logs")
 def clear_logs(_: bool = Depends(verify_api_key)):
     persist_dir = config["rag"]["persist_dir"]
     if os.path.exists(persist_dir):

@@ -86,14 +86,14 @@ spec:
               memory: 128Mi
           readinessProbe:
             httpGet:
-              path: /readyz
-              port: 8000
+                path: /devops-assistant/api/v1/readyz
+                port: 8000
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /healthz
-              port: 8000
+                path: /devops-assistant/api/v1/healthz
+                port: 8000
             initialDelaySeconds: 10
             periodSeconds: 15
       volumes:
