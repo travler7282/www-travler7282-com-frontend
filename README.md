@@ -29,7 +29,7 @@ appropriate Kubernetes microservice. The entire setup demonstrates Engineering
 skills across a broad spectrum, including network, system, Cloud (DevOps),
 and software engineering using a variety of tech stacks, languages, and AWS services.
 
-*Note*: These backends are available at api.travler7282.com/<backendname>/api/v1/<endpoint>
+*Note*: These backends are available at api.travler7282.com/`<backendname>`/api/v1/`<endpoint>`
 All backends support the heathz and readyz endpoints, many endpoints support the docs endpoint
 and will display the SwagerUI OpenAPI documentation.
 - `backends/sdrx`: Node 24 + Express + TypeScript — SDRx control and telemetry API
