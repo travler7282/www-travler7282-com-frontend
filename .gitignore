@@ -64,3 +64,4 @@ Thumbs.db
 /backends/springtime/.settings/
 /backends/springtime/.classpath
 /backends/springtime/.project
+*.jar

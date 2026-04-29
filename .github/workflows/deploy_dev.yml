@@ -23,6 +23,18 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Verify Springtime Backend (Tests)
+        run: |
+          cd backends/springtime
+          chmod +x gradlew
+          ./gradlew --no-daemon clean test
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -80,6 +92,12 @@ jobs:
             )
             echo "version=$version" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve springtime image version
+        id: springtime_version
+        run: |
+            version=$(grep -E "^version\s*=\s*'" backends/springtime/build.gradle | sed -E "s/version\s*=\s*'([^']+)'/\1/")
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Build and Push SDRx Image (Dev)
         uses: docker/build-push-action@v6
         with:
@@ -117,6 +135,16 @@ jobs:
           tags: |
             docker.io/travler7282/devops-assistant:${{ steps.devops_assistant_version.outputs.version }}-dev
             docker.io/travler7282/devops-assistant:${{ github.sha }}-dev
+
+      - name: Build and Push Springtime Image (Dev)
+        uses: docker/build-push-action@v6
+        with:
+          context: backends/springtime
+          file: backends/springtime/Dockerfile
+          push: true
+          tags: |
+            docker.io/travler7282/springtime:${{ steps.springtime_version.outputs.version }}-dev
+            docker.io/travler7282/springtime:${{ github.sha }}-dev
 
       - name: Install and Build
         run: |
