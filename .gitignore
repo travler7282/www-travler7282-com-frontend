@@ -51,3 +51,16 @@ env/
 *.swp
 *.swo
 Thumbs.db
+
+# Spring Boot / Gradle (backends/springtime)
+/backends/springtime/.gradle/
+/backends/springtime/.gradletasknamecache
+/backends/springtime/build/
+/backends/springtime/target/
+/backends/springtime/out/
+/backends/springtime/bin/
+/backends/springtime/.idea/
+/backends/springtime/*.iml
+/backends/springtime/.settings/
+/backends/springtime/.classpath
+/backends/springtime/.project
