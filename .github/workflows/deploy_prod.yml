@@ -124,7 +124,7 @@ jobs:
       - name: Build and Push SDRx Image (Prod)
         uses: docker/build-push-action@v6
         with:
-          context: backends/sdrx
+          context: .
           file: backends/sdrx/Dockerfile
           push: true
           tags: docker.io/travler7282/sdrx:${{ steps.sdrx_version.outputs.version }}
