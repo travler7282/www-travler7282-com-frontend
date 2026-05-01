@@ -1,22 +1,26 @@
 FROM node:24-alpine AS build
-WORKDIR /app
+WORKDIR /repo
 
 COPY package.json package-lock.json ./
-RUN npm ci
+COPY backends/sdrx/package.json ./backends/sdrx/package.json
+RUN npm ci --workspace=sdrx-backend --include-workspace-root=false
 
-COPY tsconfig.json ./
-COPY src ./src
+WORKDIR /repo/backends/sdrx
+COPY backends/sdrx/tsconfig.json ./tsconfig.json
+COPY backends/sdrx/src ./src
 RUN npm run build
 
 FROM node:24-alpine AS runtime
-WORKDIR /app
+WORKDIR /repo
 ENV NODE_ENV=production
 ENV PORT=8080
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+COPY backends/sdrx/package.json ./backends/sdrx/package.json
+RUN npm ci --workspace=sdrx-backend --include-workspace-root=false --omit=dev
 
-COPY --from=build /app/dist ./dist
+WORKDIR /repo/backends/sdrx
+COPY --from=build /repo/backends/sdrx/dist ./dist
 
 EXPOSE 8080
 CMD ["node", "dist/index.js"]
