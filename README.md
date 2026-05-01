@@ -100,6 +100,27 @@ Run from repository root:
 - Build all apps: `npm run build:all`
 - Run tests (where present): `npm run test:all`
 
+## Python Backend Tests (venv)
+
+Use a repository-local virtual environment for Python backend tests.
+
+### Windows PowerShell
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backends/roboarm/requirements.txt -r backends/wxstation/requirements.txt -r backends/devops-assistant/requirements.txt
+$env:APP_CONFIG='backends/devops-assistant/config.yaml'
+.\.venv\Scripts\python.exe -m pytest backends/roboarm/tests backends/wxstation/tests backends/devops-assistant/tests
+```
+
+### macOS/Linux
+
+```bash
+python3 -m venv .venv
+./.venv/bin/python -m pip install -r backends/roboarm/requirements.txt -r backends/wxstation/requirements.txt -r backends/devops-assistant/requirements.txt
+APP_CONFIG=backends/devops-assistant/config.yaml ./.venv/bin/python -m pytest backends/roboarm/tests backends/wxstation/tests backends/devops-assistant/tests
+```
+
 ## Local Development
 
 Run an individual frontend app from the root with npm workspaces:

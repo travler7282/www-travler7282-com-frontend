@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { getWindDirectionLabel } from './utils/wind';
 
 // --- Interfaces ---
 interface LocalSensors {
@@ -39,12 +40,6 @@ const nwsData = ref<NWSData>({
 
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-
-// --- Helpers ---
-const getWindDirectionLabel = (deg: number) => {
-  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-  return directions[Math.round(deg / 45) % 8];
-};
 
 // --- Data Fetching ---
 const fetchLocalData = async () => {

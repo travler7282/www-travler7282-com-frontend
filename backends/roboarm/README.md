@@ -35,7 +35,15 @@ All endpoints are available at both the root and under `/roboarm/api/v1`.
 ## Running Locally
 
 ```bash
-uvicorn main:app --reload --port 8000
+python -m venv ../../.venv
+../../.venv/Scripts/python.exe -m pip install -r requirements.txt
+../../.venv/Scripts/python.exe -m uvicorn main:app --reload --port 8000
+```
+
+## Unit Tests
+
+```bash
+../../.venv/Scripts/python.exe -m pytest tests
 ```
 
 ## Docker

@@ -13,7 +13,7 @@ type SdrState = {
   updatedAt: string;
 };
 
-const app = express();
+export const app = express();
 const port = Number(process.env.PORT ?? 8080);
 const host = process.env.HOST ?? '0.0.0.0';
 const corsOrigin = process.env.CORS_ORIGIN ?? '*';
@@ -92,21 +92,29 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-const server = app.listen(port, host, () => {
-  // Structured startup log makes container startup diagnostics easier in k3s.
-  console.log(JSON.stringify({ level: 'info', msg: 'sdr-express-app started', host, port }));
-});
-
-const shutdown = (signal: NodeJS.Signals) => {
-  console.log(JSON.stringify({ level: 'info', msg: `received ${signal}, shutting down` }));
-  server.close((err?: Error) => {
-    if (err) {
-      console.error(JSON.stringify({ level: 'error', msg: 'shutdown failed', error: err.message }));
-      process.exit(1);
-    }
-    process.exit(0);
+export const startServer = () => {
+  const server = app.listen(port, host, () => {
+    // Structured startup log makes container startup diagnostics easier in k3s.
+    console.log(JSON.stringify({ level: 'info', msg: 'sdr-express-app started', host, port }));
   });
+
+  const shutdown = (signal: NodeJS.Signals) => {
+    console.log(JSON.stringify({ level: 'info', msg: `received ${signal}, shutting down` }));
+    server.close((err?: Error) => {
+      if (err) {
+        console.error(JSON.stringify({ level: 'error', msg: 'shutdown failed', error: err.message }));
+        process.exit(1);
+      }
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+
+  return server;
 };
 
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}

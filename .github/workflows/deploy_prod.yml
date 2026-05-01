@@ -29,11 +29,34 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Verify Springtime Backend (Tests)
         run: |
           cd backends/springtime
           chmod +x gradlew
           ./gradlew --no-daemon clean test
+
+      - name: Run Backend Python Tests with Coverage
+        env:
+          APP_CONFIG: backends/devops-assistant/config.yaml
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+          pip install -r backends/roboarm/requirements.txt
+          pip install -r backends/wxstation/requirements.txt
+          pip install -r backends/devops-assistant/requirements.txt
+          pytest backends/roboarm/tests --cov=backends/roboarm --cov-report=xml:coverage-roboarm.xml
+          pytest backends/wxstation/tests --cov=backends/wxstation --cov-report=xml:coverage-wxstation.xml
+          pytest backends/devops-assistant/tests --cov=backends/devops-assistant --cov-report=xml:coverage-devops-assistant.xml
+
+      - name: Run Frontend Tests with Coverage
+        run: |
+          npm ci --include=optional
+          npm run test:all:coverage
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -101,7 +124,7 @@ jobs:
       - name: Build and Push SDRx Image (Prod)
         uses: docker/build-push-action@v6
         with:
-          context: backends/sdrx
+          context: .
           file: backends/sdrx/Dockerfile
           push: true
           tags: docker.io/travler7282/sdrx:${{ steps.sdrx_version.outputs.version }}
