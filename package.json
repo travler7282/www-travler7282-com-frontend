@@ -9,6 +9,7 @@
     "install:all": "npm install",
     "build:all": "npm run build --workspaces --if-present",
     "test:all": "npm run test --workspaces --if-present",
+    "test:all:coverage": "npm run test:coverage --workspaces --if-present",
     "dev:sdrx": "npm run dev --workspace=sdrx-backend",
     "build:sdrx": "npm run build --workspace=sdrx-backend",
     "dev:wxstation": "npm run dev --workspace=wxstation-backend",

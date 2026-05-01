@@ -3,3 +3,6 @@ uvicorn[standard]==0.34.2
 bleak==0.22.3
 pydantic==2.11.3
 opencv-python-headless==4.11.0.86
+httpx==0.28.1
+pytest==8.3.5
+pytest-cov==5.0.0

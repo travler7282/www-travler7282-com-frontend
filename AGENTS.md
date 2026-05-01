@@ -92,6 +92,19 @@ npm run build:all
 # Run all tests (workspaces that define a test script)
 npm run test:all
 
+# Run all workspace coverage scripts (where defined)
+npm run test:all:coverage
+
+# Create local Python virtual environment
+python -m venv .venv
+
+# Install Python backend dependencies into venv
+.venv/Scripts/python.exe -m pip install -r backends/roboarm/requirements.txt -r backends/wxstation/requirements.txt -r backends/devops-assistant/requirements.txt
+
+# Run Python backend unit tests from repo root
+# DevOps Assistant tests require APP_CONFIG to point at its config file
+APP_CONFIG=backends/devops-assistant/config.yaml .venv/Scripts/python.exe -m pytest backends/roboarm/tests backends/wxstation/tests backends/devops-assistant/tests
+
 # Dev servers — frontend
 npm run dev --workspace=landing-page
 npm run dev --workspace=roboarm
@@ -100,9 +113,9 @@ npm run start --workspace=sdrx        # Angular uses `start`, not `dev`
 
 # Dev servers — backends
 npm run dev:sdrx                      # SDRx Express backend (port 8080, workspace: sdrx-backend)
-cd backends/roboarm && uvicorn main:app --reload --port 8000
-cd backends/wxstation && uvicorn main:app --reload --port 8001
-cd backends/devops-assistant && uvicorn main:app --reload --port 8002   # use 8002 locally to avoid roboarm port collision
+cd backends/roboarm && .venv/Scripts/python.exe -m uvicorn main:app --reload --port 8000
+cd backends/wxstation && .venv/Scripts/python.exe -m uvicorn main:app --reload --port 8001
+cd backends/devops-assistant && .venv/Scripts/python.exe -m uvicorn main:app --reload --port 8002   # use 8002 locally to avoid roboarm port collision
 ```
 
 ---

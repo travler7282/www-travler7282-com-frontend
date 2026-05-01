@@ -85,7 +85,7 @@ const DEFAULT_LIMITS: Record<ArmJoint, JointLimit> = {
   gripperClaw: { min: 0, max: 3000 },
 };
 
-const clampGlobalPosition = (value: number) => Math.max(0, Math.min(3000, Math.round(value)));
+export const clampGlobalPosition = (value: number) => Math.max(0, Math.min(3000, Math.round(value)));
 
 const App: React.FC = () => {
   const currentHostDefault = useMemo(() => {

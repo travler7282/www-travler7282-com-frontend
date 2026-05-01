@@ -26,12 +26,18 @@ docker run -p 8000:8000 \
 ## Install in your local environment
 ### Install packages using pip
 ```
-pip install -r requirements.txt
+python -m venv ../../.venv
+../../.venv/Scripts/python.exe -m pip install -r requirements.txt
 ```
 
 ### Run this backend in your terminal
 ```
-uvicorn main:app --host 0.0.0.0 --port 8002 --proxy-headers
+../../.venv/Scripts/python.exe -m uvicorn main:app --host 0.0.0.0 --port 8002 --proxy-headers
+```
+
+### Run unit tests
+```
+APP_CONFIG=config.yaml ../../.venv/Scripts/python.exe -m pytest tests
 ```
 
 ## API Documentation
