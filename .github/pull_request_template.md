@@ -9,9 +9,12 @@
 
 ## Testing
 <!-- How was this verified? -->
+- [ ] `cd frontend && npm run lint`
+- [ ] `cd frontend && npm run test`
+- [ ] `cd frontend && npm run build`
 
 ## Checklist
-- [ ] Tested locally against dev environment
+- [ ] Linked issue follows required user-story format
+- [ ] PR targets `dev` (unless release/admin exception)
 - [ ] No secrets committed
-- [ ] `npm run build:all` passes
-- [ ] Version bumped in package.json/pyproject.toml (if applicable)
+- [ ] CI workflow assumptions match current repo layout (`frontend/` + `infrastructure/`)

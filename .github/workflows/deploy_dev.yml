@@ -4,6 +4,10 @@ on:
   push:
     branches: [ dev ]  # Triggers on merges/pushes to dev
 
+concurrency:
+  group: deploy-dev-root
+  cancel-in-progress: true
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
@@ -22,210 +26,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Lint Frontend
+        working-directory: frontend
+        run: npm run lint
 
-      - name: Verify Springtime Backend (Tests)
-        run: |
-          cd backends/springtime
-          chmod +x gradlew
-          ./gradlew --no-daemon clean test
+      - name: Test Frontend
+        working-directory: frontend
+        run: npm run test
 
-      - name: Run Backend Python Tests with Coverage
-        env:
-          APP_CONFIG: backends/devops-assistant/config.yaml
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-cov
-          pip install -r backends/roboarm/requirements.txt
-          pip install -r backends/wxstation/requirements.txt
-          pip install -r backends/devops-assistant/requirements.txt
-          pytest backends/roboarm/tests --cov=backends/roboarm --cov-report=xml:coverage-roboarm.xml
-          pytest backends/wxstation/tests --cov=backends/wxstation --cov-report=xml:coverage-wxstation.xml
-          pytest backends/devops-assistant/tests --cov=backends/devops-assistant --cov-report=xml:coverage-devops-assistant.xml
-
-      - name: Run Frontend Tests with Coverage
-        run: |
-          npm ci --include=optional
-          npm run test:all:coverage
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Resolve sdrx image version
-        id: sdrx_version
-        run: |
-            version=$(node -p "require('./backends/sdrx/package.json').version")
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Resolve roboarm image version
-        id: roboarm_version
-        run: |
-            version=$(python3 - <<'PY'
-            import tomllib
-            from pathlib import Path
-
-            pyproject = Path("backends/roboarm/pyproject.toml")
-            data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-            print(data["project"]["version"])
-            PY
-            )
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Resolve wxstation image version
-        id: wxstation_version
-        run: |
-            version=$(python3 - <<'PY'
-            import tomllib
-            from pathlib import Path
-
-            pyproject = Path("backends/wxstation/pyproject.toml")
-            data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-            print(data["project"]["version"])
-            PY
-            )
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Resolve devops-assistant image version
-        id: devops_assistant_version
-        run: |
-            version=$(python3 - <<'PY'
-            import tomllib
-            from pathlib import Path
-
-            pyproject = Path("backends/devops-assistant/pyproject.toml")
-            data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-            print(data["project"]["version"])
-            PY
-            )
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Resolve springtime image version
-        id: springtime_version
-        run: |
-            version=$(grep -E "^version\s*=\s*'" backends/springtime/build.gradle | sed -E "s/version\s*=\s*'([^']+)'/\1/")
-            echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Build and Push SDRx Image (Dev)
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: backends/sdrx/Dockerfile
-          push: true
-          tags: docker.io/travler7282/sdrx:${{ steps.sdrx_version.outputs.version }}-dev
-
-      - name: Build and Push Roboarm Image (Dev)
-        uses: docker/build-push-action@v6
-        with:
-          context: backends/roboarm
-          file: backends/roboarm/Dockerfile
-          push: true
-          tags: |
-            docker.io/travler7282/roboarm:${{ steps.roboarm_version.outputs.version }}-dev
-            docker.io/travler7282/roboarm:${{ github.sha }}-dev
-
-      - name: Build and Push WXStation Image (Dev)
-        uses: docker/build-push-action@v6
-        with:
-          context: backends/wxstation
-          file: backends/wxstation/Dockerfile
-          push: true
-          tags: |
-            docker.io/travler7282/wxstation:${{ steps.wxstation_version.outputs.version }}-dev
-            docker.io/travler7282/wxstation:${{ github.sha }}-dev
-
-      - name: Build and Push DevOps Assistant Image (Dev)
-        uses: docker/build-push-action@v6
-        with:
-          context: backends/devops-assistant
-          file: backends/devops-assistant/Dockerfile
-          push: true
-          tags: |
-            docker.io/travler7282/devops-assistant:${{ steps.devops_assistant_version.outputs.version }}-dev
-            docker.io/travler7282/devops-assistant:${{ github.sha }}-dev
-
-      - name: Build and Push Springtime Image (Dev)
-        uses: docker/build-push-action@v6
-        with:
-          context: backends/springtime
-          file: backends/springtime/Dockerfile
-          push: true
-          tags: |
-            docker.io/travler7282/springtime:${{ steps.springtime_version.outputs.version }}-dev
-            docker.io/travler7282/springtime:${{ github.sha }}-dev
-
-      - name: Install and Build
-        run: |
-          npm ci --include=optional
-          npm ls typescript --workspaces --depth=0
-          npm run build:all
-          echo "Build completed. Verifying dist folders..."
-          ls -la dist/ 2>/dev/null | grep landing-page || echo "⚠️ WARNING: dist/landing-page not found"
-          ls -la apps/roboarm/ | grep dist || echo "⚠️ WARNING: roboarm/dist not found"
-          ls -la apps/wxstation/ | grep dist || echo "⚠️ WARNING: wxstation/dist not found"
-          ls -la apps/sdrx/ | grep dist || echo "⚠️ WARNING: sdrx/dist not found"
-
-      - name: Prepare Deployment Directory
-        run: |
-          mkdir -p deploy/roboarm deploy/wxstation deploy/sdrx
-          
-          # Deploy landing page to the root (builds to ../../dist/landing-page from workspace)
-          if [ -d "dist/landing-page" ]; then
-            cp -r dist/landing-page/* ./deploy/
-            echo "✓ Landing page deployed"
-          else
-            echo "✗ ERROR: dist/landing-page not found"
-            exit 1
-          fi
-          
-          # Deploy roboarm
-          if [ -d "apps/roboarm/dist" ]; then
-            cp -r apps/roboarm/dist/* ./deploy/roboarm/
-            echo "✓ RoboArm deployed"
-          else
-            echo "✗ ERROR: apps/roboarm/dist not found"
-            exit 1
-          fi
-          
-          # Deploy wxstation
-          if [ -d "apps/wxstation/dist" ]; then
-            cp -r apps/wxstation/dist/* ./deploy/wxstation/
-            echo "✓ WXStation deployed"
-          else
-            echo "✗ ERROR: apps/wxstation/dist not found"
-            exit 1
-          fi
-          
-          # Deploy SDRx (Angular builds to a subfolder within dist)
-          if [ -d "apps/sdrx/dist/sdrx/browser" ]; then
-            cp -r apps/sdrx/dist/sdrx/browser/. ./deploy/sdrx/
-            echo "✓ SDRx deployed"
-          elif [ -d "apps/sdrx/dist" ]; then
-            echo "⚠️ SDRx dist found but expected sdrx/browser subfolder. Trying direct copy..."
-            cp -r apps/sdrx/dist/* ./deploy/sdrx/ 2>/dev/null || echo "✗ ERROR: SDRx deployment failed"
-          else
-            echo "✗ ERROR: apps/sdrx/dist not found"
-            exit 1
-          fi
-          
-          echo ""
-          echo "Deploy directory structure:"
-          find deploy -type f -name "index.html" | head -10
+      - name: Build Frontend
+        working-directory: frontend
+        run: npm run build
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
@@ -234,7 +52,21 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Deploy Build Artifacts to S3
-        run: aws s3 sync ./deploy s3://${{ secrets.AWS_DEV_BUCKET_NAME }}/ --delete
+        env:
+          PROTECTED_PREFIXES: ${{ vars.AWS_PROTECTED_PREFIXES }}
+        run: |
+          protected_prefixes="${PROTECTED_PREFIXES:-apps}"
+          IFS=',' read -ra raw_prefixes <<< "$protected_prefixes"
+          exclude_args=()
+
+          for raw in "${raw_prefixes[@]}"; do
+            prefix="$(echo "$raw" | xargs)"
+            if [ -n "$prefix" ]; then
+              exclude_args+=(--exclude "${prefix}/*")
+            fi
+          done
+
+          aws s3 sync ./frontend/dist s3://${{ secrets.AWS_DEV_BUCKET_NAME }}/ --delete "${exclude_args[@]}"
 
       - name: Invalidate CloudFront Cache
         run: |
